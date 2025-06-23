@@ -1,0 +1,7 @@
+from .dummy import DummyTask
+from .inverse_folding import InverseFoldingTask
+from .masked_residue_prediction import MaskedResiduePredictionTask
+from .mutation_effect_prediction import MutationEffectPredictionTask
+from .property_prediction import PropertyPredictionTask
+from .structure_prediction import StructurePredictionTask
+from .vertex_property_prediction import VertexPropertyPredictionTask

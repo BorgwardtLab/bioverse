@@ -1,0 +1,16 @@
+- Model: HyperFusion
+  Metric: AUROC
+  Value: [0.8475, 0.0003]
+  Source: https://ogb.stanford.edu/docs/leader_graphprop/#ogbg-molhiv
+- Model: Graphormer
+  Metric: AUROC
+  Value: [0.8051, 0.0053]
+  Source: https://ogb.stanford.edu/docs/leader_graphprop/#ogbg-molhiv
+- Model: GCN
+  Metric: AUROC
+  Value: [0.7606, 0.0097]
+  Source: https://ogb.stanford.edu/docs/leader_graphprop/#ogbg-molhiv
+- Model: GIN
+  Metric: AUROC
+  Value: [0.7558, 0.0140]
+  Source: https://ogb.stanford.edu/docs/leader_graphprop/#ogbg-molhiv

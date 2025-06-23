@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+.*
+!.gitignore
+graveyard/
+profile/
+lightning_logs/
+todo.md
+debug.py
+print_profile.py
+install.txt
+profile.txt

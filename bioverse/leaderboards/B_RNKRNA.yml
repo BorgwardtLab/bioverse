@@ -1,0 +1,16 @@
+- Model: ARES
+  Metric: MAE
+  Value: [6.6484, 5.4060]
+  Source: https://zenodo.org/records/6893018/files/notebooks.zip
+- Model: Rosetta
+  Metric: MAE
+  Value: [81.8316, 243.4740]
+  Source: https://zenodo.org/records/6893018/files/notebooks.zip
+- Model: 3dRNAscore
+  Metric: MAE
+  Value: [14.8909, 231.7188]
+  Source: https://zenodo.org/records/6893018/files/notebooks.zip
+- Model: RASP
+  Metric: MAE
+  Value: [34172.6066, 16252.6774]
+  Source: https://zenodo.org/records/6893018/files/notebooks.zip
