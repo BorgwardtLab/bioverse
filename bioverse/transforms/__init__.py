@@ -1,15 +1,25 @@
-# from .embed_rna_fm import EmbedRnaFm
-from .filter_sequence_length import FilterSequenceLength
-from .graph_from_smiles import GraphFromSmiles
-from .identity import Identity
-from .knn_graph import KnnGraph
-from .linear_residue_graph import LinearResidueGraph
-from .one_hot_atom_features import OneHotAtomFeatures
-from .one_hot_residue_features import OneHotResidueFeatures
-from .random_2d_rotate import Random2DRotate
-from .residue_positions import ResiduePositions
-from .scale import Scale
-from .scene_split import SceneSplit
-from .standardize import Standardize
-from .tokenize_atoms import TokenizeAtoms
-from .tokenize_residues import TokenizeResidues
+import importlib
+import os
+import re
+import sys
+
+__all__ = [
+    fname[:-3]
+    for fname in os.listdir(os.path.dirname(__file__))
+    if fname.endswith(".py") and fname not in ("__init__.py",)
+]  # type: ignore
+
+
+def __getattr__(name):
+    filename = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+    if filename in __all__:
+        mod = importlib.import_module(f".{filename}", __name__)
+        try:
+            cls = getattr(mod, name)
+            setattr(sys.modules[__name__], name, cls)
+            return cls
+        except AttributeError as e:
+            raise ImportError(
+                f"Cannot import name '{name}' from '{mod.__name__}': {e}"
+            ) from e
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

@@ -1,20 +1,25 @@
-from .auprc import *
-from .auroc import *
-from .balanced_binary_accuracy import *
-from .balanced_multi_class_accuracy import *
-from .binary_accuracy import *
-from .coefficient_of_determination import *
-from .error_rate import *
-from .f1_score import *
-from .mean_absolute_error import *
-from .mean_squared_error import *
-from .multi_class_accuracy import *
-from .multi_label_accuracy import *
-from .pearsons_r import *
-from .perplexity import *
-from .precision import *
-from .recall import *
-from .recovery import *
-from .spearmans_rho import *
-from .tm_score import *
-from .topk_accuracy import *
+import importlib
+import os
+import re
+import sys
+
+__all__ = [
+    fname[:-3]
+    for fname in os.listdir(os.path.dirname(__file__))
+    if fname.endswith(".py") and fname not in ("__init__.py",)
+]  # type: ignore
+
+
+def __getattr__(name):
+    filename = re.sub(r"(?<!^)(?=[A-Z])", "_", name.replace("Metric", "")).lower()
+    if filename in __all__:
+        mod = importlib.import_module(f".{filename}", __name__)
+        try:
+            cls = getattr(mod, name)
+            setattr(sys.modules[__name__], name, cls)
+            return cls
+        except AttributeError as e:
+            raise ImportError(
+                f"Cannot import name '{name}' from '{mod.__name__}': {e}"
+            ) from e
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

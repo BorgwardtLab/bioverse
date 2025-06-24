@@ -5,7 +5,7 @@ from bioverse.utilities import batched, config
 
 config.workers = 1
 
-from testing.dummy.dummy import dummy_batches
+from tests.dummy.dummy import dummy_batches
 
 
 def test_filter_sequence_length():

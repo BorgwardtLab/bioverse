@@ -1,14 +1,23 @@
-from .B_AFINVF import B_AFINVF
-from .B_ECINVF import B_ECINVF
-from .B_HIV2D0 import B_HIV2D0
-from .B_HIV3D0 import B_HIV3D0
-from .B_INVC42 import B_INVC42
-from .B_QM9APH import B_QM9APH
-from .B_QM9CV0 import B_QM9CV0
-from .B_QM9GAP import B_QM9GAP
-from .B_QM9HOM import B_QM9HOM
-from .B_QM9LUM import B_QM9LUM
-from .B_QM9MU0 import B_QM9MU0
-from .B_RMNIST import B_RMNIST
-from .B_RNA3DB import B_RNA3DB
-from .B_RNKRNA import B_RNKRNA
+import importlib
+import os
+import sys
+
+__all__ = [
+    fname[:-3]
+    for fname in os.listdir(os.path.dirname(__file__))
+    if fname.endswith(".py") and fname not in ("__init__.py",)
+]  # type: ignore
+
+
+def __getattr__(name):
+    if name in __all__:
+        mod = importlib.import_module(f".{name}", __name__)
+        try:
+            cls = getattr(mod, name)
+            setattr(sys.modules[__name__], name, cls)
+            return cls
+        except AttributeError as e:
+            raise ImportError(
+                f"Cannot import name '{name}' from '{mod.__name__}': {e}"
+            ) from e
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

@@ -5,7 +5,7 @@ from ..metric import Metric
 from ..utilities import alignment, flatten, parallelize
 
 
-class TMScoreMetric(Metric):
+class TmScoreMetric(Metric):
     better = "higher"
 
     def __init__(self, name="TM-Score", type="Protein", **kwargs):

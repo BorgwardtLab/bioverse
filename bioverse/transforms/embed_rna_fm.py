@@ -1,10 +1,8 @@
 import awkward as ak
 import fm
-import numpy as np
 import torch
 
 from ..transform import Transform
-from ..utilities import BIOCHEMICAL_ATOM_ALPHABET
 
 
 class EmbedRnaFm(Transform):

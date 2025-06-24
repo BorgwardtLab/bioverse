@@ -1,13 +1,23 @@
-from .D_AFEC00 import D_AFEC00
-from .D_AFPGYM import D_AFPGYM
-from .D_AFSP00 import D_AFSP00
-from .D_ARES00 import D_ARES00
-from .D_HIV2D0 import D_HIV2D0
-from .D_HIV3D0 import D_HIV3D0
-from .D_INVC42 import D_INVC42
-from .D_PROGYM import D_PROGYM
-from .D_QNTMA9 import D_QNTMA9
-from .D_RMD170 import D_RMD170
-from .D_RMNIST import D_RMNIST
-from .D_RNA3DB import D_RNA3DB
-from .D_TINY00 import D_TINY00
+import importlib
+import os
+import sys
+
+__all__ = [
+    fname[:-3]
+    for fname in os.listdir(os.path.dirname(__file__))
+    if fname.endswith(".py") and fname not in ("__init__.py",)
+]  # type: ignore
+
+
+def __getattr__(name):
+    if name in __all__:
+        mod = importlib.import_module(f".{name}", __name__)
+        try:
+            cls = getattr(mod, name)
+            setattr(sys.modules[__name__], name, cls)
+            return cls
+        except AttributeError as e:
+            raise ImportError(
+                f"Cannot import name '{name}' from '{mod.__name__}': {e}"
+            ) from e
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
