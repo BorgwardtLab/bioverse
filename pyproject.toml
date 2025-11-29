@@ -38,6 +38,7 @@ dependencies = [
     "joblib>=1.1.0",
     "pyarrow>=7.0.0",
     "multiprocess>=0.70.0",
+    "omegaconf>=2.3.0",
 ]
 
 [project.optional-dependencies]
