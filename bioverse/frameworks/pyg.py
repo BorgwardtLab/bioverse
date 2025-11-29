@@ -43,6 +43,11 @@ class PygFramework(Framework):
                 if "molecule_graph" in X
                 else None
             ),
+            edge_attr=(
+                ak.to_torch(ak.concatenate(X.molecule_graph_values, axis=0)).float()
+                if "molecule_graph_values" in X
+                else None
+            ),
             # num_nodes=ak.to_torch(len(X[i]["vertices"].features)),
             mask=(ak.to_torch(X.vertex_mask).bool() if "vertex_mask" in X else None),
             y=(

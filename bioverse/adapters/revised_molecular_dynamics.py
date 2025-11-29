@@ -5,35 +5,47 @@ import numpy as np
 
 from ..adapter import Adapter
 from ..data import Assets, Split
-from ..utilities import IteratorWithLength, batched, config, download, progressbar
+from ..utilities import ATOM_ALPHABET, IteratorWithLength, batched, config, download
 
 
 class RevisedMolecularDynamicsAdapter(Adapter):
     """Adapter for rMD17."""
 
     @classmethod
-    def download(cls):
+    def download(cls, name):
+        assert name in [
+            "aspirin",
+            "paracetamol",
+            "malonaldehyde",
+            "naphthalene",
+            "ethanol",
+            "salicylic",
+            "benzene",
+            "toluene",
+            "azobenzene",
+            "uracil",
+        ]
         path = config.raw_path / "RevisedMolecularDynamics17"
         download(
             "https://figshare.com/ndownloader/files/23950376",
             path,
             extension=".tar.bz2",
         )
-        files = glob(str(path / "rmd17" / "npz_data" / "*.npz"))
 
         def generator():
-            for file in progressbar(files, description="Processing"):
-                data = np.load(file)
-                name = Path(file).name.split(".")[0].split("_")[1]
-                data = {
-                    "frame_id": [0],
-                    "molecule_id": [name],
-                    "molecule_energy": [[[[data["energies"]]]]],
-                    "atom_pos": [[[[data["coords"]]]]],
-                    "atom_force": [[[[data["forces"]]]]],
-                    "atom_charge": [[[[data["nuclear_charges"]]]]],
-                }
-                yield data
+            data = np.load(path / "rmd17" / "npz_data" / f"rmd17_{name}.npz")
+            f, n, _ = data["coords"].shape
+            data = {
+                "frame_id": np.arange(f),
+                "molecule_id": np.array([[name]] * f),
+                "molecule_energy": data["energies"].reshape(f, 1),
+                "atom_pos": data["coords"].reshape(f, 1, 1, 1, n, 3),
+                "atom_force": data["forces"].reshape(f, 1, 1, 1, n, 3),
+                "atom_label": np.array(ATOM_ALPHABET)[data["nuclear_charges"] - 1]
+                .reshape(1, 1, 1, 1, n)
+                .repeat(f, axis=0),
+            }
+            yield data
 
-        batches = batched(IteratorWithLength(generator(), len(files)))
+        batches = batched(IteratorWithLength(generator(), 1))
         return batches, Split([]), Assets({})

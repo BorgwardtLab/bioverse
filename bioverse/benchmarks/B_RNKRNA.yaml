@@ -1,0 +1,6 @@
+dataset: D_ARES00
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: rms
+metric: MeanAbsoluteErrorMetric

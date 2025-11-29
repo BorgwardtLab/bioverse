@@ -1,4 +1,5 @@
 import awkward as ak
+import numpy as np
 
 from ..transform import Transform
 
@@ -12,9 +13,12 @@ class Standardize(Transform):
         values = []
         for batch in batches:
             values.append(batch.__getattr__(self.field))
-        values = ak.concatenate(values, axis=-1)
-        self.mean = ak.mean(values, axis=-1)
-        self.std = ak.std(values, axis=-1)
+        values = ak.concatenate(values, axis=0)
+        self.mean = ak.mean(values, axis=0)
+        self.std = ak.std(values, axis=0)
+        if values.ndim > 1:
+            self.mean = np.array(self.mean).reshape(1, -1)
+            self.std = np.array(self.std).reshape(1, -1)
 
     def transform_batch(self, batch):
         batch.__setattr__(

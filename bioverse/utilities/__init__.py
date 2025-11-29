@@ -2,6 +2,8 @@ from .align import *
 from .array import *
 from .config import *
 from .constants import *
+from .geometry import *
 from .io import *
 from .iter import *
+from .math import *
 from .requirements import *

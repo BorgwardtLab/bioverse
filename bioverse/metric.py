@@ -73,7 +73,7 @@ class Metric(ABC):
                 {
                     "Model": model_name,
                     "Metric": self.name,
-                    "Value": self.reduce(values),
+                    "Value": self.reduce(values).item(),
                 }
             ],
             {self.name: self.better},

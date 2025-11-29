@@ -1,0 +1,6 @@
+dataset: D_HIV3D0
+sampler: MoleculeSampler
+task: PropertyPredictionTask
+metric:
+    AurocMetric:
+        on: 0

@@ -36,7 +36,7 @@ class Dataset(ABC):
         online: bool = True,
     ) -> None:
         self.root = Path(root)
-        self.croot = Path(root) / self.__class__.__name__
+        self.croot = Path(root) / self.name
         self.online = online
         self.transform = Compose(Identity())
         if version is None:
@@ -61,6 +61,10 @@ class Dataset(ABC):
         self.clear_property_caches()
         if not os.path.exists(self.path / "transform.pkl"):
             save(self.transform, self.path / "transform.pkl")
+
+    @property
+    def name(self) -> str:
+        return self.__class__.__name__
 
     @property
     def latest_local_version(self) -> int | None:
@@ -194,10 +198,7 @@ class Dataset(ABC):
         if config.scratch_path == Path():
             raise ValueError("Please set config.scratch_path first.")
         scratch_path = (
-            config.scratch_path
-            / self.__class__.__name__
-            / f"v{self.version}"
-            / self.transform.hash()
+            config.scratch_path / self.name / f"v{self.version}" / self.transform.hash()
         )
         if not scratch_path.exists():
             note(f"Copying to scratch.")
@@ -219,12 +220,10 @@ class ComposedDataset:
 
     def __add__(self, other: Dataset | ComposedDataset) -> ComposedDataset:
         self.shards = rebatch(itertools.chain(self.shards, other.shards))
-        other_names = [
-            f"{x}_{other.__class__.__name__}" for x in other.split.attrs["names"]
-        ]
+        other_names = [f"{x}_{other.name}" for x in other.split.attrs["names"]]
         self.split = ak.concatenate(
             [self.split, other.split + len(self.split.attrs["names"])],  # type: ignore
             attrs={"names": self.split.attrs["names"] + other_names},
         )
-        self.assets[other.__class__.__name__] = other.assets
+        self.assets[other.name] = other.assets
         return self

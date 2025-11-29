@@ -1,0 +1,4 @@
+dataset: D_PCASSO
+sampler: MoleculeSampler
+task: PropertyPredictionTask
+metric: AccuracyMetric

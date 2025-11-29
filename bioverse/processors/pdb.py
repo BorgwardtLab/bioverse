@@ -49,7 +49,7 @@ class PdbProcessor(Processor):
 
         # add pLDDT if available
         if is_alphafold or pLDDT:
-            data["residue_pLDDT"] = data.pop("atom_b_factor").firsts()
+            data["residue_pLDDT"] = data.pop("atom_b_factor").firsts(2)
 
         # reshape to scenes of frames of molecules
         data = {k: v[np.newaxis, np.newaxis] for k, v in data.items()}

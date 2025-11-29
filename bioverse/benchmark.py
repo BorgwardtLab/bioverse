@@ -1,22 +1,21 @@
 import inspect
 import os
 from abc import ABC
-from functools import cached_property, partial
+from functools import partial
 from pathlib import Path
 from typing import Iterable, Tuple
 
 import awkward as ak
 from typing_extensions import Self
 
+from .collater import Collater
 from .data import Batch
 from .dataset import Dataset
-from .framework import Framework
 from .metric import Metric, Result
 from .sampler import Sampler
 from .task import Task
 from .transform import Transform
 from .utilities import config, load, parallelize
-from .virtual import VirtualBatch
 
 
 class Benchmark(ABC):
@@ -105,6 +104,7 @@ class Benchmark(ABC):
     def loader(
         self,
         split: str,
+        collater: Collater = None,
         batch_size: int = 1,
         batch_on: str = "molecules",
         shuffle: bool = False,
@@ -113,9 +113,12 @@ class Benchmark(ABC):
         world_size: int = 1,
         rank: int = 0,
         progress: bool = True,
-        framework: Framework | None = None,
+        attr: list[str] = [],
         scratch: bool = False,
     ) -> Iterable[Tuple[Tuple[ak.Array, ...], Batch | None]]:
+
+        if not split in self.dataset.split.attrs["names"]:
+            return None
 
         if scratch:
             self.dataset.move_to_scratch()
@@ -137,7 +140,7 @@ class Benchmark(ABC):
 
         def worker(batch_index):
             Xy = task(vbatch, assets, batch_index)
-            data = framework.collate(*Xy) if framework else None
+            data = collater(*Xy, attr=attr, assets=assets) if collater else None
             return Xy, data
 
         return parallelize(

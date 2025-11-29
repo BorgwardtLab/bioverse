@@ -1,0 +1,9 @@
+adapter:
+    AlphaFoldAdapter:
+        name: UP000000625_83333_ECOLI
+transforms:
+    - FilterSequenceLength:
+        max_length: 1024
+    - SceneSplit:
+        test_size: 100
+        val_size: 100

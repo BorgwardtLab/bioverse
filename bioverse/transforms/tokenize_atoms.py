@@ -1,3 +1,5 @@
+import re
+
 import awkward as ak
 
 from ..transform import Transform
@@ -8,6 +10,8 @@ class TokenizeAtoms(Transform):
 
     def __init__(self, alphabet=BIOCHEMICAL_ATOM_ALPHABET):
         self.alphabet = alphabet
+        if not type(alphabet) == list:
+            alphabet = re.findall(r"[A-Z][a-z]*", alphabet)
         self.tokens = {aa: idx for idx, aa in enumerate(alphabet)}
 
     def transform_batch(self, batch):

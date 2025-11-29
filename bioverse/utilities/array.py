@@ -74,3 +74,24 @@ def cumsum(array: ak.Array) -> ak.Array:
 
 def diff(array: ak.Array) -> ak.Array:
     return ak.fill_none(array[..., 1:] - array[..., :-1], [])  # type: ignore
+
+
+def index_put(array: ak.Array, index: ak.Array, values: ak.Array) -> ak.Array:
+    # count elements on each axis to compute offsets for flat index
+    offsets = ak.values_astype(
+        np.concatenate([np.zeros(1), np.cumsum(ak.num(array, axis=-1).ravel())])[:-1],
+        np.int64,
+    )
+    for i in range(1, array.ndim - 1)[::-1]:
+        offsets = offsets.unflatten(ak.num(array, axis=i).ravel(), axis=0)
+    offsets = offsets[tuple(index[:, :-1].to_numpy().T)]
+    # map index to flat data structure
+    flat_index = offsets + index[:, -1]
+    # flatten, put, unflatten
+    counts = [ak.num(array, axis=i).ravel() for i in range(1, array.ndim)[::-1]]
+    array = array.ravel().to_numpy()
+    array[flat_index.to_numpy().astype(np.int64)] = values.to_numpy()
+    array = ak.Array(array)
+    for c in counts:
+        array = array.unflatten(c, axis=0)
+    return array

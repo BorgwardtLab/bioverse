@@ -1,0 +1,4 @@
+dataset: D_INVC42
+sampler: MoleculeSampler
+task: InverseFoldingTask
+metric: RecoveryMetric

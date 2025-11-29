@@ -1,0 +1,6 @@
+dataset: D_RMDASP
+sampler: FrameSampler
+task:
+  PropertyPredictionTask:
+    property: "atom_force"
+metric: MeanAbsoluteErrorMetric

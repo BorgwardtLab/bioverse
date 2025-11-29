@@ -24,6 +24,6 @@ class MaskedResiduePredictionTask(Task):
             axis=-1,
         )
         y = ak.Array({"target": ak.unflatten(tokens, ak.num(targets, axis=-1))[mask]})
-        y.attrs["level"] = "vertex"
+        y["sizes"] = ak.num(y["target"], axis=-1)
         X.molecules.residue_mask = mask
         return X, y

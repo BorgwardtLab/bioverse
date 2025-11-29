@@ -32,6 +32,12 @@ class RotMnistAdapter(Adapter):
         test_data = test[:, :-1].reshape(-1, 28, 28)
         data = np.concatenate([train_data, test_data])
 
+        # subsample to 14x14 and threshold at 0.5
+        data = data[:, ::2, ::2].reshape(-1, 14, 14)
+        data[data < 0.5] = 0
+        data[data >= 0.5] = 1
+        data = data.astype(np.int32)
+
         # compute split
         n_train, n_test = int(len(train_data) * 0.8), len(test_data)
         n_val = len(train_data) - n_train

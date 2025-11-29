@@ -37,7 +37,7 @@ class GraphFromSmiles(Transform):
                         coords = mol.GetConformer().GetPositions().tolist()
                     pos.append(coords)
                 adj = Chem.GetAdjacencyMatrix(mol)
-                adj = np.array(adj.nonzero()).tolist()
+                adj = np.array(adj.nonzero()).T.tolist()
                 mol_labels = [atom.GetSymbol() for atom in mol.GetAtoms()]
                 graph.append(adj)
                 mask.append(True)
@@ -50,8 +50,7 @@ class GraphFromSmiles(Transform):
                 graph.append([None])
                 mask.append(False)
                 labels.append([None])
-        print(graph, labels)
-        batch.molecule_graph = ak.Array(graph)
+        batch.molecule_edges = ak.Array(graph)
         batch.molecules.atom_label = ak.Array(labels)
         if self.geometric:
             batch.molecules.atom_pos = ak.Array(pos)

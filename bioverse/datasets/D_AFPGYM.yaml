@@ -1,0 +1,9 @@
+parent:
+    - D_AFSP00
+    - D_PROGYM
+transforms:
+    - RenameSplit:
+        train_D_AFEC00: pretrain
+        test_D_AFEC00: pretest
+        val_D_AFEC00: preval
+        test_D_PROGYM: test

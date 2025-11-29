@@ -1,0 +1,6 @@
+dataset: D_QNTMA9
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: gap
+metric: MeanAbsoluteErrorMetric

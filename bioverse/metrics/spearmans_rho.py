@@ -10,6 +10,8 @@ class SpearmansRhoMetric(Metric):
         super().__init__(name=name, **kwargs)
 
     def compute(self, y_true, y_pred):
+        print("metric")
+
         def rank(data):
             sorter = ak.argsort(data, axis=-1)
             inv = ak.argsort(sorter, axis=-1)
@@ -27,4 +29,5 @@ class SpearmansRhoMetric(Metric):
         denominator = n * (n * n - 1)
 
         spearmans_rho = 1 - numerator / denominator
+
         return spearmans_rho

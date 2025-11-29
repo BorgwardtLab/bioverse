@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, cast
 
 import awkward as ak
 import numpy as np
+import pandas as pd
 import requests
 import yaml
 from joblib import Parallel, delayed
@@ -92,6 +93,10 @@ def load(path: Path | str, default: Any = None) -> Any:
     elif path.suffix in [".yml", ".yaml"]:
         with open(path, "r") as file:
             return yaml.safe_load(file)
+    elif path.suffix == ".csv":
+        return pd.read_csv(path)
+    elif path.suffix == ".tsv":
+        return pd.read_csv(path, sep="\t")
     else:
         raise ValueError(f"File extension {path.suffix} not known.")
 
@@ -167,6 +172,9 @@ def save_shards(iterator: Iterator[Batch], path: Path | str) -> None:
         if "molecule_graph" in shard.data:
             graphs = shard.scenes.frames.molecules.molecule_graph
             shard.toc["graph"] = ak.num(graphs, axis=4)[:, :, :, 0]
+        if "molecule_mutation_labels" in shard.data:
+            mutations = shard.scenes.frames.molecules.molecule_mutation_labels
+            shard.toc["mutations"] = ak.num(mutations, axis=3)
         scene_nums.append(shard.toc.pop("scene"))
         toc.append(ak.Array(shard.toc))
         save(shard.data, path / f"{shard_num}.ak")

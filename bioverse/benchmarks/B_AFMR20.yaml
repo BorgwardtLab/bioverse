@@ -1,0 +1,6 @@
+dataset: D_AFSP00
+sampler:
+    ResidueSampler:
+        num_residues: 0.20
+task: MaskedResiduePredictionTask
+metric: RecoveryMetric

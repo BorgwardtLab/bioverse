@@ -10,8 +10,11 @@ class BatchProxy:
     def __init__(self, batch: Batch, nesting: List[int] = []):
         self.batch = batch
         self.nesting = nesting
+        self.mask_index = None
 
     def __getattr__(self, name: str) -> BatchProxy | ak.Array:
+        if name in ["batch", "nesting", "mask_index"]:
+            return super().__getattr__(name)
         if name == "vertices":
             name = "residues" if self.batch.resolution == "residue" else "atoms"
         if name.startswith("vertex"):
@@ -40,6 +43,8 @@ class BatchProxy:
             raise AttributeError(f"Attribute '{name}' not found in data.")
 
     def __setattr__(self, name: str, value: Any) -> None:
+        if name in ["batch", "nesting", "mask_index"]:
+            return super().__setattr__(name, value)
         if name.startswith("vertex"):
             name = name.replace(
                 "vertex", "residue" if self.batch.resolution == "residue" else "atom"
@@ -69,22 +74,42 @@ class BatchProxy:
                 self.batch.toc[prefix] = toc_vals
             for axis in range(1, self.batch.prefixes.index(prefix) + 1)[::-1]:
                 if not axis in self.nesting:
-                    # print(name, axis, self.batch.prefixes[axis], self.nesting)
-                    # print(value, len(value))
-                    # print(
-                    #     self.batch.toc[self.batch.prefixes[axis]],
-                    #     ak.sum(self.batch.toc[self.batch.prefixes[axis]]),
-                    #     len(self.batch.toc[self.batch.prefixes[axis]].ravel()),
-                    # )
-                    # print(sum([n < axis for n in self.nesting]))
-                    # print(self.batch.toc[self.batch.prefixes[axis]].to_list())
                     value = value.unflatten(  # type: ignore[attr-defined]
                         counts=self.batch.toc[self.batch.prefixes[axis]].ravel(),
                         axis=sum([n < axis for n in self.nesting]),
                     )
             self.batch.data[name] = value
+        elif name.rstrip("s") in self.batch.prefixes and isinstance(value, BatchProxy):
+            mask = value.mask_index
+            prefix = name.rstrip("s")
+            if mask is not None:
+                if not isinstance(mask, ak.Array):
+                    mask = ak.Array(mask)
+                for axis in range(1, self.batch.prefixes.index(prefix) + 1)[::-1]:
+                    if not axis in self.nesting:
+                        mask = mask.unflatten(  # type: ignore[attr-defined]
+                            counts=self.batch.toc[self.batch.prefixes[axis]].ravel(),
+                            axis=sum([n < axis for n in self.nesting]),
+                        )
+                # mask every column of prefix and below
+                for col in self.batch.data.keys():
+                    if self.batch.prefixes.index(
+                        col.split("_")[0]
+                    ) >= self.batch.prefixes.index(prefix):
+                        self.batch.data[col] = self.batch.data[col][mask]
+                # update toc
+                if type(ak.ravel(mask)[0]) == np.bool_:  # todo: better type check
+                    self.batch.toc[prefix] = ak.sum(mask, axis=-1)
+                else:
+                    self.batch.toc[prefix] = ak.num(mask, axis=-1)
         else:
-            return super().__setattr__(name, value)
+            raise AttributeError(f"Attribute must start with a prefix.")
+
+    def __getitem__(
+        self, index: slice | int | ak.Array | Tuple[slice | int | ak.Array, ...]
+    ) -> BatchProxy:
+        self.mask_index = index
+        return self
 
 
 class Batch:
@@ -152,7 +177,11 @@ class Batch:
             return BatchProxy(self).__getattr__(name)
 
     def __setattr__(self, name: str, value: ak.Array) -> None:
+        if name in ["data", "prefixes", "levels", "toc", "length", "resolution"]:
+            return super().__setattr__(name, value)
         if "_" in name and name.split("_")[0] in self.prefixes + ["vertex"]:
+            return BatchProxy(self).__setattr__(name, value)
+        elif name.rstrip("s") in self.prefixes:
             return BatchProxy(self).__setattr__(name, value)
         else:
             return super().__setattr__(name, value)

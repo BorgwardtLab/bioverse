@@ -51,11 +51,10 @@ class ProteinInvBenchAdapter(Adapter):
                 )
                 atom_label = np.array(["N", "CA", "C", "O"] * len(item["seq"]))
                 atom_mask = ~np.any(np.isnan(atom_pos), axis=-1)
-                ca_mask = atom_mask[1::4]  # filter for CA atoms
                 atom_counts = ak.sum(ak.unflatten(atom_mask, 4), axis=-1)
-                atom_pos = ak.unflatten(atom_pos[atom_mask], atom_counts)[ca_mask]
-                atom_label = ak.unflatten(atom_label[atom_mask], atom_counts)[ca_mask]
-                residue_label = np.array([aa for aa in item["seq"]])[ca_mask]
+                atom_pos = ak.unflatten(atom_pos[atom_mask], atom_counts)
+                atom_label = ak.unflatten(atom_label[atom_mask], atom_counts)
+                residue_label = np.array([aa for aa in item["seq"]])
                 data = {
                     "molecule_id": [[item["name"]]],
                     "molecule_cath": [[item["CATH"]]],

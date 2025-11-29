@@ -1,0 +1,6 @@
+dataset: D_RMNIST
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: label
+metric: ErrorRateMetric

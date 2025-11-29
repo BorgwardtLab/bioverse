@@ -32,6 +32,9 @@ class Sampler(ABC):
         split_mask = ak.any(
             [ak.any(dataset.split == n, axis=1) for n in split_numbers], axis=0
         )
+        assert (
+            split_mask.ndim > 0 and ak.sum(split_mask) > 0
+        ), f"No {split} split found in dataset."
         split_toc = toc[split_mask]
         split_toc = cast(ak.Array, split_toc)
         # shards = cast(ak.Array, split_toc["shard"])
@@ -50,10 +53,11 @@ class Sampler(ABC):
             split_toc = split_toc[shuffle_index]
             split_toc = cast(ak.Array, split_toc)
         index = self.index(split_toc)
-        if batch_on == "scenes":
+        if batch_on == "scenes" or batch_on == "mutations":
             # tie loose ends to make equal-length batch lists in DDP
-            end = (len(split_toc) - world_size + 1) // world_size * world_size
-            return ak.unflatten(index[rank:end:world_size], batch_size)
+            # end = (len(split_toc) - world_size + 1) // world_size * world_size # put this back if there are bugs
+            end = (len(index["scene"]) - world_size + 1) // world_size * world_size
+            return ak.unflatten(index[rank:end:world_size], min(batch_size, end - rank))
         elif batch_on == "frames":
             sizes = toc["frame"][index["scene"]]
         elif batch_on == "molecules":
@@ -74,6 +78,6 @@ class Sampler(ABC):
         # ensure equal-length batch lists in DDP
         rank_min_batch_num = min(len(rank_sizes[world]) for world in range(world_size))
         if drop_last:
-            rank_min_batch_num = rank_min_batch_num - 1
+            rank_min_batch_num -= 1
         index = index[:rank_min_batch_num]
         return index

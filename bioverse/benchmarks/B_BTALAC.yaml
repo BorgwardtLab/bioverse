@@ -1,0 +1,4 @@
+dataset: D_BTALAC
+sampler: MoleculeSampler
+task: PropertyPredictionTask
+metric: BalancedBinaryAccuracyMetric

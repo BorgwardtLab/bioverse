@@ -13,7 +13,11 @@ class PropertyPredictionTask(Task):
     def __call__(self, vbatch, assets, index):
         X = vbatch[index["scene"], index["frame"], index["molecule"]]
         X.resolution = self.resolution
-        targets = X.molecules.__getattr__(f"molecule_{self.property}")
+        if isinstance(self.property, tuple) or isinstance(self.property, list):
+            prop, index = self.property
+            targets = X.molecules.__getattr__(f"molecule_{prop}")[:, index]
+        else:
+            targets = X.molecules.__getattr__(f"molecule_{self.property}")
         y = ak.Array({"target": targets})
         y.attrs["level"] = "molecule"
         return X, y

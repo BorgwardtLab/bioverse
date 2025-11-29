@@ -2,6 +2,7 @@ venv/
 __pycache__/
 .*
 !.gitignore
+!.github/
 graveyard/
 profile/
 lightning_logs/
@@ -10,3 +11,4 @@ debug.py
 print_profile.py
 install.txt
 profile.txt
+bioverse.egg-info/

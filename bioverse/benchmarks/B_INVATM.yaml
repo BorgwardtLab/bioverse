@@ -1,0 +1,6 @@
+dataset: D_INVC42
+sampler: MoleculeSampler
+task:
+  InverseFoldingTask:
+    resolution: atom
+metric: RecoveryMetric

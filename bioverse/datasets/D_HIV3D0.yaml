@@ -1,0 +1,6 @@
+adapter: DtpAidsAdapter
+transforms:
+    - GraphFromSmiles:
+        geometric: true
+        dim: 3
+

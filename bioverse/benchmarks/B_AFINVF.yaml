@@ -1,0 +1,4 @@
+dataset: D_AFSP00
+sampler: MoleculeSampler
+task: InverseFoldingTask
+metric: RecoveryMetric
