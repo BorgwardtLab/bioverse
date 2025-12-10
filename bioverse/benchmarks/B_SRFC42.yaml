@@ -1,4 +1,4 @@
-dataset: D_INVC42
+dataset: D_SRFC42
 sampler: MoleculeSampler
 task: InverseFoldingTask
 metric:

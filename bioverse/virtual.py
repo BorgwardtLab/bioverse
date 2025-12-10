@@ -25,11 +25,12 @@ class LRUCache(OrderedDict):
 
 class VirtualBatch:
 
-    def __init__(self, path, assets) -> None:
+    def __init__(self, path, assets, live_transforms) -> None:
         self.path = path
         self.assets = assets
         self.cache = LRUCache(config.cache_size)
         self.superbatch = Batch({})
+        self.live_transforms = live_transforms
 
     def featurize(self, batch: Batch) -> Batch:
         """
@@ -80,4 +81,6 @@ class VirtualBatch:
             scene_index + self.offsets[np.searchsorted(self.shards, shard_index)]
         )
         index = (scene_index, *index[1:])
-        return self.superbatch[index]  # type: ignore
+        vbatch = self.superbatch[index]  # type: ignore
+        vbatch = self.live_transforms.transform_batch(vbatch)
+        return vbatch

@@ -39,6 +39,7 @@ class Dataset(ABC):
         self.croot = Path(root) / self.name
         self.online = online
         self.transform = Compose(Identity())
+        self.live_transform = Compose(Identity())
         if version is None:
             if online and not self.latest_online_version is None:
                 version = self.latest_online_version
@@ -152,7 +153,7 @@ class Dataset(ABC):
         return self.virtual()
 
     def virtual(self):
-        return VirtualBatch(self.path, self.assets)
+        return VirtualBatch(self.path, self.assets, self.live_transform)
 
     def apply(self, *transforms: Transform) -> None:
         self.transform = Compose(*transforms)
@@ -170,6 +171,9 @@ class Dataset(ABC):
             self.transform = load(new_path / "transform.pkl")  # for fitted values
         self.path = new_path
         self.clear_property_caches()
+
+    def live(self, *transforms: Transform) -> None:
+        self.live_transform = Compose(*transforms)
 
     @abstractmethod
     def release(self) -> Tuple[Iterator[Batch], Split, Assets]:

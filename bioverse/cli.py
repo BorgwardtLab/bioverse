@@ -49,6 +49,9 @@ def main():
     benchmark = BenchmarkFactory(config["benchmark"])
     transforms = TransformFactory(config["transforms"])
     benchmark.apply(transforms)
+    if "live_transforms" in config:
+        live_transforms = TransformFactory(config["live_transforms"])
+        benchmark.live(live_transforms)
 
     # instantiate trainer
     trainer = Trainer(model, benchmark, **config["trainer"])

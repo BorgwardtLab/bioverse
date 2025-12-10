@@ -195,24 +195,30 @@ class Result:
     def format_row(
         self, row, metrics, decimals, boldify, show_std, bold_open, bold_close
     ):
-        if show_std:
-            values = [
-                (
-                    f"{bold_open}{row[m][0]:.{decimals}f} {chr(0x00B1)} {row[m][1]:.{decimals}f}{bold_close}"
-                    if row[m][2] and boldify
-                    else f"{row[m][0]:.{decimals}f} {chr(0x00B1)} {row[m][1]:.{decimals}f}"
-                )
-                for m in metrics
-            ]
-        else:
-            values = [
-                (
-                    f"{bold_open}{row[m][0]:.{decimals}f}{bold_close}"
-                    if row[m][2] and boldify
-                    else f"{row[m][0]:.{decimals}f}"
-                )
-                for m in metrics
-            ]
+        values = []
+        for m in metrics:
+            # Some models may not have all metrics present (e.g. when using
+            # MultiMetric with heterogeneous metric sets). In that case, leave
+            # the cell empty instead of raising a KeyError.
+            if m not in row:
+                values.append("")
+                continue
+
+            mean, std, is_best = row[m]
+            if show_std:
+                if is_best and boldify:
+                    values.append(
+                        f"{bold_open}{mean:.{decimals}f} {chr(0x00B1)} {std:.{decimals}f}{bold_close}"
+                    )
+                else:
+                    values.append(
+                        f"{mean:.{decimals}f} {chr(0x00B1)} {std:.{decimals}f}"
+                    )
+            else:
+                if is_best and boldify:
+                    values.append(f"{bold_open}{mean:.{decimals}f}{bold_close}")
+                else:
+                    values.append(f"{mean:.{decimals}f}")
         return values
 
     def to_string(self) -> str:

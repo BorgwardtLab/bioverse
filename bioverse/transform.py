@@ -113,6 +113,11 @@ class Compose(Transform):
             batches, split, assets = transform(batches, split, assets)
         return batches, split, assets
 
+    def transform_batch(self, batch: Batch) -> Batch:
+        for transform in self.transforms:
+            batch = transform.transform_batch(batch)
+        return batch
+
     def inverse_transform(self, y: ak.Array) -> ak.Array:
         for transform in self.transforms:
             y = transform.inverse_transform(y)

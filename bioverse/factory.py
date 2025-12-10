@@ -7,6 +7,7 @@ from typing import cast
 
 from .benchmark import Benchmark
 from .dataset import ComposedDataset, Dataset
+from .metric import MultiMetric
 from .transform import Compose, Transform
 from .utilities import load
 
@@ -47,7 +48,11 @@ def _load_module(cfg: str | Path | dict, submodule: str = None) -> object:
         return getattr(import_module(module), name)(**(kwargs or {}))
     # load recursively from list
     elif isinstance(cfg, list):
-        return [_load_module(item, submodule) for item in cfg]
+        module_list = [_load_module(item, submodule) for item in cfg]
+        if submodule == "metrics":
+            return MultiMetric(module_list)
+        else:
+            return module_list
     else:
         raise ValueError("Invalid configuration.")
 

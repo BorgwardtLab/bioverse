@@ -80,6 +80,7 @@ class Trainer:
             compile,
             clip_grad_norm,
             clip_grad_value,
+            random_seed,
         )
         self.collater = getattr(collaters, collater)()
         if isinstance(logger, dict):

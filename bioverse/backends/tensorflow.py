@@ -13,8 +13,19 @@ class TensorflowBackend(Backend):
         precision=32,
         matmul_precision="medium",
         compile=False,
+        clip_grad_norm=None,
+        clip_grad_value=None,
+        random_seed=None,
     ):
+        import random
+
+        import numpy as np
         import tensorflow as tf
+
+        if random_seed is not None:
+            random.seed(random_seed)
+            tf.random.set_seed(random_seed)
+            np.random.seed(random_seed)
 
         if devices > 1:
             raise ValueError("Tensorflow does not yet support multi-device training.")

@@ -85,6 +85,10 @@ class Benchmark(ABC):
             setattr(self, f"{split}_loader", partial(self.wrap_loader, split=split))
         return self
 
+    def live(self, *transforms: Transform) -> Self:
+        self.dataset.live(*transforms)
+        return self
+
     def wrap_loader(self, *args, **kwargs):
         if not "random_seed" in kwargs or kwargs["random_seed"] is None:
             kwargs["random_seed"] = config.seed
@@ -138,6 +142,8 @@ class Benchmark(ABC):
 
         task, vbatch, assets = self.task, self.dataset.virtual(), self.dataset.assets
 
+        # todo: maybe apply live transforms to assets and splits
+
         def worker(batch_index):
             Xy = task(vbatch, assets, batch_index)
             data = collater(*Xy, attr=attr, assets=assets) if collater else None
@@ -155,6 +161,8 @@ class Benchmark(ABC):
     def update(self, y_true: ak.Array, y_pred: ak.Array) -> None:
         y_true = self.dataset.transform.inverse_transform(y_true)
         y_pred = self.dataset.transform.inverse_transform(y_pred)
+        y_true = self.dataset.live_transform.inverse_transform(y_true)
+        y_pred = self.dataset.live_transform.inverse_transform(y_pred)
         self.metric.update(y_true, y_pred)
 
     def result(self, *args, **kwargs) -> Result:

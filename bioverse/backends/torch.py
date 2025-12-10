@@ -15,9 +15,14 @@ class TorchBackend(Backend):
         compile=False,
         clip_grad_norm=None,
         clip_grad_value=None,
+        random_seed=None,
     ):
         import torch
         from lightning.fabric import Fabric
+        from lightning.pytorch import seed_everything
+
+        if random_seed is not None:
+            seed_everything(random_seed)
 
         torch.set_float32_matmul_precision(matmul_precision)
         self.torch = torch

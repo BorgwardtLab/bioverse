@@ -1,0 +1,7 @@
+adapter: ProteinInvBenchAdapter
+transforms:
+    - ResiduePositions:
+    - IsSurfaceResidue:
+    - FilterResiduesByValue:
+        attribute: residue_is_surface
+        value: 1
