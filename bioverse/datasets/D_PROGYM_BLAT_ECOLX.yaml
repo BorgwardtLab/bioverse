@@ -1,0 +1,4 @@
+adapter:
+    ProteinGymAdapter:
+        assays:
+            - BLAT_ECOLX_Stiffler_2015

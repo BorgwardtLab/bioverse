@@ -14,7 +14,7 @@ class ProteinGymAdapter(Adapter):
     """Adapter for ProteinGym."""
 
     @classmethod
-    def download(cls):
+    def download(cls, assays: list[str] | None = None):
         path = config.raw_path / "ProteinGym"
         download(
             "https://huggingface.co/datasets/tyang816/ProteinGym_v1/resolve/main/ProteinGym_v1_AlphaFold2_PDB.zip",
@@ -32,6 +32,8 @@ class ProteinGymAdapter(Adapter):
         split, items = [], []
         for path in paths:
             name = Path(path).stem
+            if assays is not None and name not in assays:
+                continue
             if not name in structures:
                 continue
             df = pd.read_csv(path)

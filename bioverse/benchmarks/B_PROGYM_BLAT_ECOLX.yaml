@@ -1,0 +1,5 @@
+dataset: D_PROGYM_BLAT_ECOLX
+sampler: MutationSampler
+task: MutationEffectPredictionTask
+metric: SpearmansRhoMetric
+split: random_mutation_split

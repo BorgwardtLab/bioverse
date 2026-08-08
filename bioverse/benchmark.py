@@ -16,6 +16,7 @@ from .sampler import Sampler
 from .task import Task
 from .transform import Transform
 from .utilities import config, load, parallelize
+from .virtual import VirtualBatch
 
 
 class Benchmark(ABC):
@@ -153,11 +154,14 @@ class Benchmark(ABC):
             rank=rank,
         )
 
-        task, vbatch, assets = self.task, self.dataset.virtual(), self.dataset.assets
+        task, assets = self.task, self.dataset.assets
+        path = self.dataset.path
+        live_transform = self.dataset.live_transform
 
         # todo: maybe apply live transforms to assets and splits
 
         def worker(batch_index):
+            vbatch = VirtualBatch(path, assets, live_transform)
             Xy = task(vbatch, assets, batch_index)
             data = collater(*Xy, attr=attr, assets=assets) if collater else None
             return Xy, data
