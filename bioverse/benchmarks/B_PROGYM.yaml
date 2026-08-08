@@ -1,0 +1,4 @@
+dataset: D_PROGYM
+sampler: MutationSampler
+task: MutationEffectPredictionTask
+metric: SpearmansRhoMetric

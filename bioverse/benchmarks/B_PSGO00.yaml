@@ -1,0 +1,7 @@
+dataset: D_PSGO00
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: molecular_function
+metric:
+- FmaxMetric

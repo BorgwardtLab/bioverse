@@ -70,7 +70,7 @@ def BenchmarkFactory(cfg: str | Path | dict) -> Benchmark:
         metric = _load_module(cfg["metric"], "metrics")
 
     # Initialize the benchmark instance
-    return BenchmarkInstance()
+    return BenchmarkInstance(split=cfg.get("split", "default"))
 
 
 def TransformFactory(cfg: str | Path | list) -> Transform:

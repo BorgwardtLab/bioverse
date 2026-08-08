@@ -31,4 +31,4 @@ class QuantumMachinesAdapter(Adapter):
             batch.data.pop("molecule_labels")
             return batch
 
-        return batches.map(modify), Split([]), Assets({})
+        return batches.map(modify), Split(), Assets({})

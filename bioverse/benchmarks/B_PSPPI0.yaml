@@ -1,0 +1,9 @@
+dataset: D_PSPPI0
+sampler: InterfacePairSampler
+task:
+    PairwisePropertyPredictionTask:
+        meta: interface_contacts
+        level: molecule
+metric:
+- AurocMetric
+- AuprcMetric

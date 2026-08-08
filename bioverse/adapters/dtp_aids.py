@@ -37,7 +37,9 @@ class DtpAidsAdapter(Adapter):
             with open(path / "hiv" / "split" / "scaffold" / f"{name}.csv") as file:
                 split_index = np.array([int(line) for line in file.readlines()])
             original_split_len[name] = len(split_index)
-            split[split_index] = {"train": [0], "valid": [1], "test": [2]}[name]
+            split[split_index] = {"train": "train", "valid": "val", "test": "test"}[
+                name
+            ]
         split_lookup = {k: v for k, v in zip(smiles, split)}
         split = np.array([split_lookup[smile] for smile in smiles])
 
@@ -54,4 +56,8 @@ class DtpAidsAdapter(Adapter):
                 yield ak.Record(data)
 
         batches = batched(IteratorWithLength(generator(), len(smiles)))
-        return batches, Split(split, names=["train", "val", "test"]), Assets({})
+        return (
+            batches,
+            Split({"OGB_scene_split": split}, default="OGB_scene_split"),
+            Assets({}),
+        )

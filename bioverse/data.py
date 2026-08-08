@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any, List, Tuple, cast
 
 import awkward as ak
@@ -244,18 +246,65 @@ class Batch:
             return other + self
 
 
-class Split(ak.Array):
+class Split:
 
     def __init__(
         self,
-        index: ak.Array | np.ndarray | list = [],
-        names: List[str] = [],
-        *args,
-        **kwargs,
+        data: dict[str, ak.Array | np.ndarray | list | tuple] = {},
+        default: str = "default",
     ):
-        if isinstance(index, ak.Array) and "names" in index.attrs:
-            names = index.attrs["names"]
-        super().__init__(index, attrs={"names": names}, *args, **kwargs)
+        self.default = default
+        self.data = {}
+        self.names = {}
+        for split_name, names in data.items():
+            assert split_name.split("_")[-1] == "split" and split_name.split("_")[
+                -2
+            ] in [
+                "scene",
+                "frame",
+                "molecule",
+                "chain",
+                "residue",
+                "atom",
+                "mutation",
+            ], "Split name must end with 'x_split' where x is one of 'scene', 'frame', 'molecule', 'chain', 'residue', 'atom', or 'mutation'"
+            names, inverse = np.unique(np.asarray(names), return_inverse=True)
+            self.data[split_name] = inverse
+            self.names[split_name] = list(names)
+
+    def __getitem__(self, index) -> ak.Array:
+        if isinstance(index, tuple):
+            split_name, partition = index
+        else:
+            split_name = self.default
+            partition = index
+        if split_name == "default":
+            split_name = self.default
+        return self.data[split_name] == self.names[split_name].index(partition)
+
+    def __add__(self, other: Split | dict) -> Split:
+        if isinstance(other, dict):
+            other = Split(other)
+        return Split({**self.data, **other.data})
+
+    def save(self, path: Path) -> None:
+        with open(path / "split.json", "w") as f:
+            json.dump({k: v.tolist() for k, v in self.data.items()}, f)
+        with open(path / "split.names.json", "w") as f:
+            json.dump(self.names, f)
+        with open(path / "split.default.json", "w") as f:
+            json.dump(self.default, f)
+
+    @classmethod
+    def load(cls, path: Path) -> Split:
+        split = cls()
+        with open(path / "split.json", "r") as f:
+            split.data = {k: np.array(v) for k, v in json.load(f).items()}
+        with open(path / "split.names.json", "r") as f:
+            split.names = json.load(f)
+        with open(path / "split.default.json", "r") as f:
+            split.default = json.load(f)
+        return split
 
 
 class Assets(dict):

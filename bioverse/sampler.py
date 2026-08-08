@@ -5,7 +5,7 @@ import awkward as ak
 import numpy as np
 
 from .dataset import Dataset
-from .utilities import config
+from .utilities import SHARD_SIZE, config
 
 
 class Sampler(ABC):
@@ -17,6 +17,7 @@ class Sampler(ABC):
     def sample(
         self,
         dataset: Dataset,
+        partition: str,
         split: str,
         batch_size: int = 1,
         batch_on: str = "scenes",
@@ -27,32 +28,23 @@ class Sampler(ABC):
         rank: int = 0,
     ) -> Tuple[ak.Array, ak.Array]:
         self.rng = np.random.default_rng(random_seed)
-        toc, tos, split_names = (dataset.toc, dataset.tos, dataset.split.attrs["names"])
-        split_numbers = np.argwhere(np.array(split_names) == split)[:, 0]
-        split_mask = ak.any(
-            [ak.any(dataset.split == n, axis=1) for n in split_numbers], axis=0
-        )
-        assert (
-            split_mask.ndim > 0 and ak.sum(split_mask) > 0
-        ), f"No {split} split found in dataset."
-        split_toc = toc[split_mask]
-        split_toc = cast(ak.Array, split_toc)
-        # shards = cast(ak.Array, split_toc["shard"])
-        # shard_order = shards[np.sort(np.unique(shards, return_index=True)[1])]
-        # shard_order = cast(ak.Array, shard_order)
+        partition = dataset.split.default if partition is None else partition
+        toc, tos, mask = dataset.toc, dataset.tos, dataset.split[split, partition]
+        # todo: reduce toc with split, index, then remap
+        index = self.index(toc, mask)
         if shuffle:
-            # shard_sizes = ak.run_lengths(shards)
-            # scenes = ak.unflatten(np.arange(len(shards)), shard_sizes)
-            num_scenes_per_shard = ak.unflatten(split_mask, tos).sum(axis=1)
+            order = np.argsort(index["scene"])
+            index = ak.Array({k: index[k][order] for k in index.fields})
+            num_scenes_per_shard = np.unique(
+                index["scene"] // SHARD_SIZE, return_counts=True
+            )[1]
             shuffle_index = ak.unflatten(
-                np.arange(len(split_toc)), num_scenes_per_shard
+                np.arange(len(index["scene"])), num_scenes_per_shard
             )
             shuffle_index = ak.Array([self.rng.permutation(s) for s in shuffle_index])
             shard_perm = self.rng.permutation(len(shuffle_index))
             shuffle_index = ak.flatten(shuffle_index[shard_perm])
-            split_toc = split_toc[shuffle_index]
-            split_toc = cast(ak.Array, split_toc)
-        index = self.index(split_toc)
+            index = ak.Array({k: index[k][shuffle_index] for k in index.fields})
         if batch_on == "scenes" or batch_on == "mutations":
             # tie loose ends to make equal-length batch lists in DDP
             # end = (len(split_toc) - world_size + 1) // world_size * world_size # put this back if there are bugs

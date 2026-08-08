@@ -172,9 +172,9 @@ def save_shards(iterator: Iterator[Batch], path: Path | str) -> None:
         if "molecule_graph" in shard.data:
             graphs = shard.scenes.frames.molecules.molecule_graph
             shard.toc["graph"] = ak.num(graphs, axis=4)[:, :, :, 0]
-        if "molecule_mutation_labels" in shard.data:
-            mutations = shard.scenes.frames.molecules.molecule_mutation_labels
-            shard.toc["mutations"] = ak.num(mutations, axis=3)
+        if "molecule_mutation_effect" in shard.data:
+            mutations = shard.scenes.frames.molecules.molecule_mutation_effect
+            shard.toc["mutations"] = ak.num(mutations, axis=2).ravel()
         scene_nums.append(shard.toc.pop("scene"))
         toc.append(ak.Array(shard.toc))
         save(shard.data, path / f"{shard_num}.ak")

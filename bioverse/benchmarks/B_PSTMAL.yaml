@@ -1,0 +1,9 @@
+dataset: D_PSTMAL
+sampler: PairwiseSampler
+task:
+    PairwisePropertyPredictionTask:
+        meta: lddt
+        level: molecule
+metric:
+- SpearmansRhoMetric
+- MeanSquaredErrorMetric

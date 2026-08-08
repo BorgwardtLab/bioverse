@@ -12,14 +12,15 @@ __all__ = [
 
 def __getattr__(name):
     filename = re.sub(r"(?<!^)(?=[A-Z])", "_", name.replace("Adapter", "")).lower()
-    if filename in __all__:
-        mod = importlib.import_module(f".{filename}", __name__)
-        try:
-            cls = getattr(mod, name)
-            setattr(sys.modules[__name__], name, cls)
-            return cls
-        except AttributeError as e:
-            raise ImportError(
-                f"Cannot import name '{name}' from '{mod.__name__}': {e}"
-            ) from e
+    for candidate in (filename, filename.replace("_", "")):
+        if candidate in __all__:
+            mod = importlib.import_module(f".{candidate}", __name__)
+            try:
+                cls = getattr(mod, name)
+                setattr(sys.modules[__name__], name, cls)
+                return cls
+            except AttributeError as e:
+                raise ImportError(
+                    f"Cannot import name '{name}' from '{mod.__name__}': {e}"
+                ) from e
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

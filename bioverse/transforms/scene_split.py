@@ -24,6 +24,6 @@ class SceneSplit(Transform):
             else self.val_size
         )
         n_train = n - n_test - n_val
-        index = [[0]] * n_train + [[1]] * n_test + [[2]] * n_val
-        split = Split(index, names=["train", "test", "val"])
+        index = ["train"] * n_train + ["test"] * n_test + ["val"] * n_val
+        split = Split({"random_scene_split": index}, default="random_scene_split")
         return batches, split, assets

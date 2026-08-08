@@ -1,4 +1,5 @@
 import awkward as ak
+import numpy as np
 
 from ..metric import Metric
 
@@ -10,7 +11,8 @@ class MultiClassAccuracyMetric(Metric):
         super().__init__(name=name, **kwargs)
 
     def compute(self, y_true, y_pred):
-        y_pred = ak.argmax(y_pred, axis=-1)
-        correct = ak.sum(y_true == y_pred, axis=-1)
-        total = ak.num(y_true, axis=-1)
-        return correct / total
+        y_true = np.asarray(ak.ravel(y_true))
+        y_pred = np.asarray(
+            ak.argmax(y_pred, axis=-1) if y_pred.ndim > 1 else y_pred
+        )
+        return float(np.mean(y_true == y_pred))

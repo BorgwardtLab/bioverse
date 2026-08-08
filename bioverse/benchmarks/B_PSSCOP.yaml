@@ -1,0 +1,9 @@
+dataset: D_PSSCOP
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: scop_fa
+metric:
+- MultiClassAccuracyMetric
+- MacroPrecisionMetric
+- MacroRecallMetric

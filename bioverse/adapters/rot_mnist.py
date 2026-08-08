@@ -41,7 +41,7 @@ class RotMnistAdapter(Adapter):
         # compute split
         n_train, n_test = int(len(train_data) * 0.8), len(test_data)
         n_val = len(train_data) - n_train
-        split = np.array([[0]] * n_train + [[1]] * n_val + [[2]] * n_test)
+        split = np.array(["train"] * n_train + ["val"] * n_val + ["test"] * n_test)
 
         # convert to point cloud
         coords = [np.argwhere(item) for item in data]
@@ -60,4 +60,8 @@ class RotMnistAdapter(Adapter):
                 yield ak.Record(data)
 
         batches = batched(IteratorWithLength(generator(), len(coords)))
-        return batches, Split(split, names=["train", "val", "test"]), Assets({})
+        return (
+            batches,
+            Split({"random_scene_split": split}, default="random_scene_split"),
+            Assets({}),
+        )

@@ -39,10 +39,10 @@ class Trainer:
         random_seed=42,
         progress=True,
         scratch=False,
-        train_split_name="train",
-        val_split_name="val",
-        test_split_name="test",
-        pre_split_name="pre",
+        train_partition_name="train",
+        val_partition_name="val",
+        test_partition_name="test",
+        pre_partition_name="pre",
     ):
         config.workers = workers
         config.seed = random_seed
@@ -62,10 +62,10 @@ class Trainer:
         self.random_seed = random_seed
         self.progress = progress
         self.scratch = scratch
-        self.train_split_name = train_split_name
-        self.val_split_name = val_split_name
-        self.test_split_name = test_split_name
-        self.pre_split_name = pre_split_name
+        self.train_partition_name = train_partition_name
+        self.val_partition_name = val_partition_name
+        self.test_partition_name = test_partition_name
+        self.pre_partition_name = pre_partition_name
         self.initial_validation = initial_validation
 
         self.benchmark = benchmark
@@ -98,12 +98,12 @@ class Trainer:
             self.run_eval(command)
 
     def run_train(self):
-        if not self.val_split_name is None and self.initial_validation:
+        if not self.val_partition_name is None and self.initial_validation:
             self.run_eval("val")
         for epoch in range(1, self.epochs + 1):
             self.epoch = epoch
             loader = self.benchmark.loader(
-                split=self.train_split_name,
+                partition=self.train_partition_name,
                 collater=self.collater,
                 batch_size=self.batch_size,
                 batch_on=self.batch_on,
@@ -121,7 +121,7 @@ class Trainer:
                 loss, output, target = self.backend.train_step(Xy, data)
                 if self.step % self.log_every == 0:
                     self.logger.log_loss(loss, mode="train")
-            if not self.val_split_name is None:
+            if not self.val_partition_name is None:
                 self.run_eval("val")
             if (
                 isinstance(self.checkpoint_every, int)
@@ -136,9 +136,9 @@ class Trainer:
         if command == "test":
             self.backend.load_checkpoint(self.root / self.restore_from)
         loader = self.benchmark.loader(
-            split={
-                "val": self.val_split_name,
-                "test": self.test_split_name,
+            partition={
+                "val": self.val_partition_name,
+                "test": self.test_partition_name,
             }[command],
             collater=self.collater,
             batch_size=self.batch_size,
@@ -165,7 +165,7 @@ class Trainer:
 
     def run_pre(self):
         loader = self.benchmark.loader(
-            split=self.pre_split_name,
+            partition=self.pre_partition_name,
             collater=self.collater,
             batch_size=self.batch_size,
             batch_on=self.batch_on,

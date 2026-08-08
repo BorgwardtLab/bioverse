@@ -1,0 +1,6 @@
+adapter:
+    ProteinShakeAdapter:
+        dataset: AlphaFoldDataset_swissprot
+transforms:
+    - DeduplicateAtoms
+    - SceneSplit

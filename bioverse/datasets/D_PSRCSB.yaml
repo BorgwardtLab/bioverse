@@ -1,0 +1,6 @@
+adapter:
+    ProteinShakeAdapter:
+        dataset: RCSBDataset
+transforms:
+    - DeduplicateAtoms
+    - SceneSplit

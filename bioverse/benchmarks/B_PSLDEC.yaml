@@ -1,0 +1,6 @@
+dataset: D_PSLDEC
+sampler: MoleculeSampler
+task: VirtualScreenTask
+metric:
+- EnrichmentFactorMetric
+- MeanActiveRankMetric

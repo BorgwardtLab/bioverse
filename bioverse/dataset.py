@@ -102,8 +102,7 @@ class Dataset(ABC):
         self.path = self.croot / f"v{version}" / self.transform.hash()
         self.clear_property_caches()
         save_shards(data, self.path)
-        save(split, self.path / "split.ak")
-        save(split.attrs["names"], self.path / "split.names.json")
+        split.save(self.path)
         save(assets, self.path / "assets.json")
         os.makedirs(self.path, exist_ok=True)
         return version
@@ -122,9 +121,7 @@ class Dataset(ABC):
 
     @cached_property
     def split(self) -> Split:
-        index = load(self.path / "split.ak")
-        names = load(self.path / "split.names.json")
-        return Split(index, names)
+        return Split.load(self.path)
 
     @cached_property
     def num_shards(self) -> int:
@@ -161,8 +158,7 @@ class Dataset(ABC):
         if not os.path.exists(new_path):
             shards, split, assets = self.transform(self.shards, self.split, self.assets)
             save_shards(shards, new_path)
-            save(split, new_path / "split.ak")
-            save(split.attrs["names"], new_path / "split.names.json")
+            split.save(new_path)
             save(assets, new_path / "assets.json")
             save(self.transform, new_path / "transform.pkl")
         else:
@@ -224,10 +220,6 @@ class ComposedDataset:
 
     def __add__(self, other: Dataset | ComposedDataset) -> ComposedDataset:
         self.shards = rebatch(itertools.chain(self.shards, other.shards))
-        other_names = [f"{x}_{other.name}" for x in other.split.attrs["names"]]
-        self.split = ak.concatenate(
-            [self.split, other.split + len(self.split.attrs["names"])],  # type: ignore
-            attrs={"names": self.split.attrs["names"] + other_names},
-        )
+        # todo: what about splits?
         self.assets[other.name] = other.assets
         return self

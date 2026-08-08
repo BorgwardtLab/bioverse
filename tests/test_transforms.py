@@ -1,3 +1,5 @@
+import awkward as ak
+
 from bioverse.data import Assets, Split
 from bioverse.processors import PdbProcessor
 from bioverse.transforms import *
@@ -63,3 +65,11 @@ def test_tokenize_residues():
     transform = TokenizeResidues()
     transformed, split, assets = transform(dummy_batches(), Split([]), Assets({}))
     next(transformed)
+
+
+def test_deduplicate_atoms():
+    transform = DeduplicateAtoms()
+    transformed, split, assets = transform(dummy_batches(), Split([]), Assets({}))
+    batch = next(transformed)
+    for atoms in ak.to_list(batch.residues.atom_label):
+        assert len(atoms) == len(set(atoms))

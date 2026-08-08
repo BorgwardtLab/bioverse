@@ -6,16 +6,16 @@ from ..utilities import flatten
 
 class MoleculeSampler(Sampler):
 
-    def index(self, toc):
-        molecules = toc["chain"]
+    def index(self, toc, mask):
+        molecules = toc[mask]["chain"]  # scene filter by split mask
         index = ak.zip([ak.local_index(molecules, i) for i in range(molecules.ndim)])
         index = flatten(index, exclude=4)
         scenes, frames, molecules = ak.unzip(index)
-        scenes = toc["scene"][scenes]  # remap to toc index
+        scenes = toc[mask]["scene"][scenes]  # remap scenes to toc index
 
         # reshape
         frames = frames.unflatten(ak.full_like(scenes, 1))  # scenes are always 1
-        molecules = molecules.unflatten(toc["frame"])
+        molecules = molecules.unflatten(toc[mask]["frame"])
 
         index = ak.Array(
             {

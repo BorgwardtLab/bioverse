@@ -13,4 +13,4 @@ class AlphaFoldAdapter(Adapter):
         base_url = "https://ftp.ebi.ac.uk/pub/databases/alphafold/latest/"
         download(f"{base_url}/{name}_{version}.tar", path)
         glob_delete(str(path / "*.cif.gz"))  # remove double files, keep .pdb
-        return batched(PdbProcessor.process(path)), Split([]), Assets({})
+        return batched(PdbProcessor.process(path)), Split(), Assets({})

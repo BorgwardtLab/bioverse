@@ -1,0 +1,9 @@
+dataset: D_PSPFAM
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: pfam
+metric:
+- MultiClassAccuracyMetric
+- MacroPrecisionMetric
+- MacroRecallMetric

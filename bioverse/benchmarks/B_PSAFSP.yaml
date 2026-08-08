@@ -1,0 +1,9 @@
+dataset: D_PSAFSP
+sampler: MoleculeSampler
+task: InverseFoldingTask
+metric:
+- RecoveryMetric
+- TopkRecoveryMetric:
+    k: 2
+- TopkRecoveryMetric:
+    k: 3

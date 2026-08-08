@@ -34,5 +34,9 @@ class Rna3dbAdapter(Adapter):
                 itertools.chain(train, val, test), len(train) + len(val) + len(test)
             )
         )
-        split = [[0]] * len(train) + [[1]] * len(val) + [[2]] * len(test)
-        return batches, Split(split, ["train", "val", "test"]), Assets({})
+        split = ["train"] * len(train) + ["val"] * len(val) + ["test"] * len(test)
+        return (
+            batches,
+            Split({"random_scene_split": split}, default="random_scene_split"),
+            Assets({}),
+        )

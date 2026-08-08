@@ -26,7 +26,7 @@ class ProteinInvBenchAdapter(Adapter):
         )
         split_lookup = load(path / "data" / "cath4.2" / "chain_set_splits.json")
         split_lookup = {
-            v: [i]
+            v: ["train", "val", "test"][i]
             for i, k in enumerate(["train", "validation", "test"])
             for v in split_lookup[k]
         }
@@ -65,4 +65,11 @@ class ProteinInvBenchAdapter(Adapter):
                 yield ak.Record(data)
 
         batches = batched(IteratorWithLength(generator(), len(proteins)))
-        return batches, Split(split, names=["train", "val", "test"]), Assets({})
+        return (
+            batches,
+            Split(
+                {"ProteinInvBench_scene_split": split},
+                default="ProteinInvBench_scene_split",
+            ),
+            Assets({}),
+        )

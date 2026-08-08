@@ -29,7 +29,7 @@ class Benchmark(ABC):
         self,
         root: Path | str = config.benchmarks_path,
         version: int = 0,
-        partition: str = "main",
+        split: str = "default",
         n_jobs: int | None = None,
     ) -> None:
         """
@@ -39,8 +39,8 @@ class Benchmark(ABC):
             Root directory for benchmark data storage, defaults to config.benchmarks_path
         version : int, optional
             Version number of the benchmark, defaults to 0
-        partition : str, optional
-            Partition name for the benchmark data, defaults to "main"
+        split : str or None, optional
+            Split name for the benchmark data, defaults to None
         n_jobs : int or None, optional
             Number of parallel jobs to run. If None, uses all available cores
 
@@ -52,9 +52,8 @@ class Benchmark(ABC):
         - task: Task class, instance, or (class, kwargs) tuple
         - metric: Metric class, instance, or (class, kwargs) tuple
         """
-        self.root = Path(root) / f"{self.name}v{version}" / partition
+        self.root = Path(root) / f"{self.name}v{version}" / split
         os.makedirs(self.root, exist_ok=True)
-        self.partition = partition
         self.n_jobs = n_jobs
 
         # initialize components from config, class, or instance
@@ -67,6 +66,15 @@ class Benchmark(ABC):
                 setattr(self, attr, kwargs())
             else:
                 setattr(self, attr, kwargs)
+
+        self.split = self.dataset.split.default if split == "default" else split
+
+    def _partitions(self):
+        if self.split in self.dataset.split.names:
+            return self.dataset.split.names[self.split]
+        if self.dataset.split.names:
+            return next(iter(self.dataset.split.names.values()))
+        return ["train"]
 
     @property
     def name(self) -> str:
@@ -81,8 +89,12 @@ class Benchmark(ABC):
     def apply(self, *transforms: Transform) -> Self:
         self.dataset.apply(*transforms)
         # initialize loaders (transforms can change splits, so we do it here)
-        for split in self.dataset.split.attrs["names"]:
-            setattr(self, f"{split}_loader", partial(self.wrap_loader, split=split))
+        for partition in self._partitions():
+            setattr(
+                self,
+                f"{partition}_loader",
+                partial(self.wrap_loader, partition=partition),
+            )
         return self
 
     def live(self, *transforms: Transform) -> Self:
@@ -107,7 +119,7 @@ class Benchmark(ABC):
 
     def loader(
         self,
-        split: str,
+        partition: str,
         collater: Collater = None,
         batch_size: int = 1,
         batch_on: str = "molecules",
@@ -121,7 +133,7 @@ class Benchmark(ABC):
         scratch: bool = False,
     ) -> Iterable[Tuple[Tuple[ak.Array, ...], Batch | None]]:
 
-        if not split in self.dataset.split.attrs["names"]:
+        if not partition in self._partitions():
             return None
 
         if scratch:
@@ -130,7 +142,8 @@ class Benchmark(ABC):
         # sample the index
         index = self.sampler.sample(
             dataset=self.dataset,
-            split=split,
+            split=self.split,
+            partition=partition,
             batch_size=batch_size,
             batch_on=batch_on,
             shuffle=shuffle,

@@ -7,15 +7,16 @@ from ..utilities import flatten
 
 class MutationSampler(Sampler):
 
-    def index(self, toc):
-        num_mutations = toc["mutations"].ravel().num(axis=0)
+    def index(self, toc, mask):
+        scenes = np.repeat(np.arange(len(toc["mutations"])), toc["mutations"])[mask]
+        mutations = np.concatenate([np.arange(m) for m in toc["mutations"]])[mask]
 
         index = ak.Array(
             {
-                "scene": np.full(num_mutations, 0),
-                "frame": ak.Array(np.full(num_mutations, 0)).unflatten(1, -1),
-                "molecule": ak.Array(np.full(num_mutations, 0)).unflatten(1, -1),
-                "mutation": ak.Array(self.rng.permutation(np.arange(num_mutations))),
+                "scene": scenes,
+                "frame": ak.Array(np.full(len(scenes), 0)).unflatten(1, -1),
+                "molecule": ak.Array(np.full(len(scenes), 0)).unflatten(1, -1),
+                "mutation": ak.Array(mutations),
             }
         )
         return index

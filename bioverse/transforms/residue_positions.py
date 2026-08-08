@@ -11,7 +11,6 @@ class ResiduePositions(Transform):
 
     def transform_batch(self, batch):
         if self.mode == "CA":
-            # filter residues with missing atoms
             mask = ak.any(batch.residues.atom_label == "CA", axis=1)
             batch.residues = batch.residues[mask]
             batch.residue_pos = batch.atom_pos[batch.atom_label == "CA"]

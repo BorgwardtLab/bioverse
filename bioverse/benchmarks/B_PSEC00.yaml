@@ -1,0 +1,10 @@
+dataset: D_PSEC00
+sampler: MoleculeSampler
+task:
+    PropertyPredictionTask:
+        property: ec1
+        resolution: residue
+metric:
+- MultiClassAccuracyMetric
+- MacroPrecisionMetric
+- MacroRecallMetric

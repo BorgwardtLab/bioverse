@@ -79,7 +79,7 @@ class PicassoAdapter(Adapter):
         coords = np.concatenate([X_train, X_val], axis=0)
         labels = np.concatenate([y_train, y_val], axis=0)
         adj = np.concatenate([edge_index, edge_index], axis=0)
-        split = np.array([[0]] * len(X_train) + [[1]] * len(X_val))
+        split = np.array(["train"] * len(X_train) + ["val"] * len(X_val))
 
         # create records
         def generator():
@@ -93,4 +93,8 @@ class PicassoAdapter(Adapter):
                 yield ak.Record(data)
 
         batches = batched(IteratorWithLength(generator(), len(coords)))
-        return batches, Split(split, names=["train", "val"]), Assets({})
+        return (
+            batches,
+            Split({"random_scene_split": split}, default="random_scene_split"),
+            Assets({}),
+        )

@@ -36,12 +36,12 @@ class BetaLactamAdapter(Adapter):
         df = make_df(pos, neg)
 
         split = np.array(
-            [[1]] * n_val
-            + [[2]] * n_test
-            + [[0]] * n_train_pos
-            + [[1]] * n_val
-            + [[2]] * n_test
-            + [[0]] * n_train_neg
+            ["val"] * n_val
+            + ["test"] * n_test
+            + ["train"] * n_train_pos
+            + ["val"] * n_val
+            + ["test"] * n_test
+            + ["train"] * n_train_neg
         )
         perm = np.random.permutation(len(split))
         split, df = split[perm], df.iloc[perm]
@@ -60,7 +60,11 @@ class BetaLactamAdapter(Adapter):
                 yield ak.Record(data)
 
         batches = batched(IteratorWithLength(generator(), len(df)))
-        return batches, Split(split, names=["train", "val", "test"]), Assets({})
+        return (
+            batches,
+            Split({"random_scene_split": split}, default="random_scene_split"),
+            Assets({}),
+        )
 
 
 def iter_unique_molecules(records):

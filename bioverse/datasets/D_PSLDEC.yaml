@@ -1,0 +1,6 @@
+adapter:
+    ProteinShakeAdapter:
+        dataset: ProteinLigandDecoysDataset
+transforms:
+    - DeduplicateAtoms
+    - SceneSplit

@@ -38,7 +38,12 @@ class AresAdapter(Adapter):
         n_train, n_val, n_test = len(train), len(val), len(test)
         batches = IteratorWithLength(chain(train, val, test), n_train + n_val + n_test)
         split = Split(
-            [[0]] * n_train + [[1]] * n_val + [[2]] * n_test, ["train", "val", "test"]
+            {
+                "ares_scene_split": ["train"] * n_train
+                + ["val"] * n_val
+                + ["test"] * n_test
+            },
+            default="ares_scene_split",
         )
         return batched(batches), split, Assets({})
 

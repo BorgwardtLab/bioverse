@@ -42,11 +42,20 @@ class TensorflowBackend(Backend):
         return 0
 
     def put_on_device(self, data):
+        if hasattr(data, "data1") and hasattr(data, "data2"):
+            self.put_on_device(data.data1)
+            self.put_on_device(data.data2)
+            if getattr(data, "y", None) is not None:
+                try:
+                    data.y = ak.to_tensorflow(data.y)
+                except Exception:
+                    pass
+            return
         for key, value in vars(data).items():
             if not key.startswith("_"):
                 try:
                     setattr(data, key, ak.to_tensorflow(value))
-                except:
+                except Exception:
                     pass
 
     def train_step(self, Xy, data):
