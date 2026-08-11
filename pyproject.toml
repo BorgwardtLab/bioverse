@@ -31,6 +31,7 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
     "numpy>=1.21.0",
+    "scipy>=1.7.0",
     "awkward>=1.8.0",
     "biopandas>=0.2.7",
     "rich>=12.0.0",
@@ -54,6 +55,7 @@ dev = [
 docs = [
     "sphinx>=4.0.0",
     "sphinxawesome-theme==5.3.2",
+    "PyYAML>=6.0",
 ]
 
 [project.urls]
