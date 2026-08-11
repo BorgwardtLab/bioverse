@@ -1,5 +1,9 @@
-Bioverse
-========
+.. image:: ../../assets/bioverse_logo.png
+   :alt: Bioverse
+   :align: center
+   :width: 360px
+
+|
 
 *Machine learning on biomolecules*
 

@@ -80,6 +80,10 @@ _paper_url = os.environ.get(
     f"{_docs_baseurl.rstrip('/')}/citation.html" if _docs_baseurl else "citation.html",
 )
 
+_assets_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets"))
+html_logo = os.path.join(_assets_dir, "bioverse_logo.png")
+html_favicon = os.path.join(_assets_dir, "favicon.ico")
+
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_js_files = ["mode.js"]

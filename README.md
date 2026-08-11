@@ -1,4 +1,8 @@
-# Bioverse
+<p align="center">
+  <img src="assets/bioverse_logo.png" alt="Bioverse" width="360">
+</p>
+
+<p align="center"><em>Machine learning on biomolecules</em></p>
 
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue?style=flat-square&logo=readthedocs&logoColor=white)](https://borgwardtlab.github.io/bioverse/)
 [![PyPI](https://img.shields.io/pypi/v/bioverse-ml?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/bioverse-ml/)
