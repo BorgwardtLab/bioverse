@@ -1,7 +1,10 @@
+description: Gene ontology molecular function prediction (Fmax) on ProteinShake structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSGO00
 sampler: MoleculeSampler
 task:
-    PropertyPredictionTask:
-        property: molecular_function
+  PropertyPredictionTask:
+    property: molecular_function
 metric:
 - FmaxMetric

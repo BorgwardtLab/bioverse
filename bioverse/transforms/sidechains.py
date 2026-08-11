@@ -7,6 +7,8 @@ from ..utilities import normalize
 
 class Sidechains(Transform):
 
+    """Compute or add sidechains features to batches."""
+
     def transform_batch(self, batch):
         # From https://github.com/drorlab/gvp-pytorch.git
 

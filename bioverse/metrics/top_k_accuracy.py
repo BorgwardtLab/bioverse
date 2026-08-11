@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class TopKAccuracyMetric(Metric):
+    """Top-k classification accuracy."""
+
     better = "higher"
 
     def __init__(self, name="Accuracy", k=10, **kwargs):

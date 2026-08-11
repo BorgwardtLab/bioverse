@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class RecallMetric(Metric):
+    """Recall (true positive rate)."""
+
     better = "higher"
 
     def __init__(self, name="Recall", **kwargs):

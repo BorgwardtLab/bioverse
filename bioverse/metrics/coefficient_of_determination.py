@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class CoefficientOfDeterminationMetric(Metric):
+    """Coefficient of determination (R²)."""
+
     better = "higher"
 
     def __init__(self, name="R2", **kwargs):

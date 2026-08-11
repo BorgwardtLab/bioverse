@@ -1,5 +1,8 @@
+description: ProteinShake SCOP fold classification structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 adapter:
-    ProteinShakeAdapter:
-        dataset: SCOPDataset
+  ProteinShakeAdapter:
+    dataset: SCOPDataset
 transforms:
-    - DeduplicateAtoms
+- DeduplicateAtoms

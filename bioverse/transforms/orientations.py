@@ -7,6 +7,8 @@ from ..utilities import normalize
 
 class Orientations(Transform):
 
+    """Compute or add orientations features to batches."""
+
     def transform_batch(self, batch):
         # From https://github.com/drorlab/gvp-pytorch.git
         mask = ak.any(batch.residues.atom_label == "CA", axis=1)

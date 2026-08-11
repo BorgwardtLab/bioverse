@@ -6,6 +6,8 @@ from ..utilities import PROTEIN_ALPHABET
 
 
 class InverseFoldingTask(Task):
+    """Predict amino-acid sequences from backbone structure."""
+
     def __init__(self, resolution="residue"):
         codes = np.char.encode(
             ak.ravel(list(PROTEIN_ALPHABET)).to_list(), "utf-8"

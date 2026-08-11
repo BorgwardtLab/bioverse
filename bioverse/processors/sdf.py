@@ -11,6 +11,8 @@ from bioverse.utilities import IteratorWithLength, progressbar
 
 class SdfProcessor(Processor):
 
+    """Parse SDF molecular structure files into Awkward records."""
+
     valid_extensions = [".sdf"]
 
     @classmethod

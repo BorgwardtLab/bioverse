@@ -1,8 +1,11 @@
+description: Pfam family multi-class classification on ProteinShake structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSPFAM
 sampler: MoleculeSampler
 task:
-    PropertyPredictionTask:
-        property: pfam
+  PropertyPredictionTask:
+    property: pfam
 metric:
 - MultiClassAccuracyMetric
 - MacroPrecisionMetric

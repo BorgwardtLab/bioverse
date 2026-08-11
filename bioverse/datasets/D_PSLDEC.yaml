@@ -1,6 +1,9 @@
+description: ProteinShake protein–ligand decoy structures for virtual screening.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 adapter:
-    ProteinShakeAdapter:
-        dataset: ProteinLigandDecoysDataset
+  ProteinShakeAdapter:
+    dataset: ProteinLigandDecoysDataset
 transforms:
-    - DeduplicateAtoms
-    - SceneSplit
+- DeduplicateAtoms
+- SceneSplit

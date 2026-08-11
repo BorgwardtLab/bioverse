@@ -11,7 +11,7 @@ from ..utilities import IteratorWithLength, batched, config, download
 
 
 class ProteinGymAdapter(Adapter):
-    """Adapter for ProteinGym."""
+    """Download deep mutational scanning benchmarks from ProteinGym."""
 
     @classmethod
     def download(cls, assays: list[str] | None = None):

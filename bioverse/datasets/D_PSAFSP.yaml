@@ -1,6 +1,10 @@
+description: ProteinShake AlphaFold Swiss-Prot structures with deduplication and scene
+  splits.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 adapter:
-    ProteinShakeAdapter:
-        dataset: AlphaFoldDataset_swissprot
+  ProteinShakeAdapter:
+    dataset: AlphaFoldDataset_swissprot
 transforms:
-    - DeduplicateAtoms
-    - SceneSplit
+- DeduplicateAtoms
+- SceneSplit

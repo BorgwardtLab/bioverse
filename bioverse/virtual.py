@@ -9,6 +9,12 @@ from .utilities import SHARD_SIZE, config, load
 
 
 class LRUCache(OrderedDict):
+    """Least-recently-used cache for on-disk batch shards.
+
+    Used by :class:`VirtualBatch` to limit memory when loading shards during
+    task extraction.
+    """
+
     def __init__(self, size: int = config.cache_size):
         super().__init__()
         self.size = size
@@ -24,6 +30,19 @@ class LRUCache(OrderedDict):
 
 
 class VirtualBatch:
+    """Lazy, cache-backed view over sharded on-disk dataset data.
+
+    ``VirtualBatch`` loads only the shards needed for a given index tuple,
+    featurizes tokens using :class:`~bioverse.data.Assets`, and applies live
+    transforms before returning a :class:`~bioverse.data.Batch` to the task.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       vbatch = VirtualBatch(dataset.path, dataset.assets, dataset.live_transform)
+       batch = vbatch[index["scene"], index["frame"], index["molecule"]]
+    """
 
     def __init__(self, path, assets, live_transforms) -> None:
         self.path = path

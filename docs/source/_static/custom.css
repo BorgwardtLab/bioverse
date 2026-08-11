@@ -1,0 +1,255 @@
+/*
+ * Bioverse documentation theme
+ *
+ * Two-tone palette:
+ *   Ink       #1C1917  text, borders, dividers (very dark brown)
+ *   Page      #FDFBF9  warm white background
+ *   Brand     #A4BFA6  light green — highlights, hovers
+ *   Brand-dk  #4A6B4E  dark green — links, logo, accents
+ */
+
+:root,
+html:not(.dark) {
+  color-scheme: light;
+
+  /* Flat HSL for Tailwind hsl(var(--*)) */
+  --background: 30 33% 99%;
+  --foreground: 30 10% 10%;
+  --muted: 30 20% 96%;
+  --muted-foreground: 30 8% 35%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 30 10% 10%;
+  --border: 30 8% 10%;
+  --input: 30 8% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 30 10% 10%;
+  --primary: 127 18% 36%;
+  --primary-foreground: 30 33% 99%;
+  --secondary: 124 17% 92%;
+  --secondary-foreground: 30 10% 10%;
+  --accent: 124 20% 93%;
+  --accent-foreground: 127 18% 36%;
+  --destructive: 0 72% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 124 17% 70%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: 30 10% 8%;
+  --foreground: 30 15% 92%;
+  --muted: 30 8% 14%;
+  --muted-foreground: 30 10% 65%;
+  --popover: 30 10% 10%;
+  --popover-foreground: 30 15% 92%;
+  --border: 30 8% 22%;
+  --input: 30 8% 22%;
+  --card: 30 10% 10%;
+  --card-foreground: 30 15% 92%;
+  --primary: 124 17% 70%;
+  --primary-foreground: 30 10% 10%;
+  --secondary: 30 8% 16%;
+  --secondary-foreground: 30 15% 90%;
+  --accent: 30 8% 16%;
+  --accent-foreground: 124 17% 70%;
+  --ring: 124 17% 70%;
+}
+
+/* Page shell — warm white */
+html:not(.dark),
+html:not(.dark) body,
+html:not(.dark) #page {
+  background-color: #FDFBF9;
+  color: #1C1917;
+}
+
+html:not(.dark) .bg-background {
+  background-color: #FDFBF9;
+}
+
+html:not(.dark) header.border-b {
+  background-color: #FDFBF9;
+  border-bottom-color: rgba(28, 25, 23, 0.12);
+}
+
+html:not(.dark) #left-sidebar,
+html:not(.dark) #right-sidebar {
+  background-color: #FDFBF9;
+}
+
+html:not(.dark) .text-foreground {
+  color: #1C1917;
+}
+
+html:not(.dark) .text-muted-foreground {
+  color: rgba(28, 25, 23, 0.55);
+}
+
+html:not(.dark) .border-border {
+  border-color: rgba(28, 25, 23, 0.12);
+}
+
+/* Hover / highlight surfaces — light green only */
+html:not(.dark) .bg-muted {
+  background-color: rgba(164, 191, 166, 0.14);
+}
+
+html:not(.dark) .bg-accent,
+html:not(.dark) .hover\:bg-accent:hover {
+  background-color: rgba(164, 191, 166, 0.18);
+}
+
+html:not(.dark) .hover\:text-accent-foreground:hover {
+  color: #4A6B4E;
+}
+
+/* Logo & header */
+html:not(.dark) header .font-bold {
+  color: #4A6B4E;
+}
+
+html:not(.dark) header a {
+  color: rgba(28, 25, 23, 0.55);
+}
+
+html:not(.dark) header a:hover {
+  color: #4A6B4E;
+}
+
+/* Sidebar */
+html:not(.dark) #left-sidebar .caption {
+  color: #1C1917;
+  font-weight: 600;
+}
+
+html:not(.dark) #left-sidebar a {
+  color: rgba(28, 25, 23, 0.72);
+}
+
+html:not(.dark) #left-sidebar a.current {
+  background-color: rgba(164, 191, 166, 0.28);
+  border-color: #4A6B4E;
+  color: #1C1917;
+}
+
+html:not(.dark) #left-sidebar a:hover {
+  color: #4A6B4E;
+}
+
+/* Content typography — ink brown */
+html:not(.dark) #content h1,
+html:not(.dark) #content h2,
+html:not(.dark) #content h3,
+html:not(.dark) #content h4 {
+  color: #1C1917;
+}
+
+html:not(.dark) #content h2 {
+  border-bottom-color: rgba(28, 25, 23, 0.14);
+}
+
+/* Links — dark green */
+html:not(.dark) #content a:not(.toc-backref):not(.headerlink) {
+  color: #4A6B4E;
+}
+
+html:not(.dark) #content a:not(.toc-backref):not(.headerlink):hover {
+  color: #3A5A3E;
+}
+
+html:not(.dark) #content a:not(.toc-backref):not(.headerlink):visited {
+  color: #4A6B4E;
+}
+
+/* API signatures */
+html:not(.dark) .sig-name,
+html:not(.dark) #content .sig-name.descname {
+  color: #4A6B4E;
+}
+
+html:not(.dark) .sig {
+  border-top-color: rgba(28, 25, 23, 0.1);
+  background-color: #FFFFFF;
+}
+
+/* Code */
+html:not(.dark) #content code {
+  background-color: rgba(164, 191, 166, 0.16);
+  color: #1C1917;
+}
+
+html:not(.dark) pre {
+  border-color: rgba(28, 25, 23, 0.12);
+  background-color: #FFFFFF;
+}
+
+/* Right sidebar TOC */
+html:not(.dark) #right-sidebar a {
+  color: rgba(28, 25, 23, 0.62);
+}
+
+html:not(.dark) #right-sidebar a[data-current="true"] {
+  color: #4A6B4E;
+  font-weight: 600;
+}
+
+html:not(.dark) #right-sidebar code.literal {
+  background-color: rgba(164, 191, 166, 0.16);
+  color: #4A6B4E;
+}
+
+/* Admonitions */
+html:not(.dark) .admonition {
+  color: #1C1917;
+  border-color: rgba(28, 25, 23, 0.14);
+}
+
+html:not(.dark) .note {
+  border-color: #A4BFA6;
+  background-color: rgba(164, 191, 166, 0.12);
+}
+
+html:not(.dark) .note .admonition-title {
+  color: #4A6B4E;
+}
+
+html:not(.dark) .tip,
+html:not(.dark) .important {
+  border-color: #4A6B4E;
+  background-color: rgba(164, 191, 166, 0.1);
+}
+
+html:not(.dark) .tip .admonition-title,
+html:not(.dark) .important .admonition-title {
+  color: #4A6B4E;
+}
+
+/* Footer */
+html:not(.dark) footer.border-t {
+  border-top-color: rgba(28, 25, 23, 0.12);
+  background-color: #FDFBF9;
+}
+
+/* Search */
+html:not(.dark) #search-input {
+  border-color: rgba(28, 25, 23, 0.14);
+  color: #1C1917;
+}
+
+html:not(.dark) #search-input:focus-visible {
+  border-color: #4A6B4E;
+  box-shadow: 0 0 0 2px rgba(164, 191, 166, 0.45);
+}
+
+html:not(.dark) #search-input::placeholder {
+  color: rgba(28, 25, 23, 0.4);
+}
+
+/* Dividers & horizontal rules */
+html:not(.dark) hr,
+html:not(.dark) .contents local table,
+html:not(.dark) table.docutils {
+  border-color: rgba(28, 25, 23, 0.12);
+}

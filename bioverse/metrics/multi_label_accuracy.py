@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class MultiLabelAccuracyMetric(Metric):
+    """Exact-match accuracy for multi-label classification."""
+
     better = "higher"
 
     def __init__(self, name="Accuracy", threshold=0.5, **kwargs):

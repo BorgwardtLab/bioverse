@@ -5,6 +5,8 @@ from ..utilities import config
 
 class SceneSplit(Transform):
 
+    """Assign split partitions at the scene level."""
+
     def __init__(self, train_size=0.8, test_size=0.1, val_size=0.1) -> None:
         super().__init__()
         self.train_size = train_size

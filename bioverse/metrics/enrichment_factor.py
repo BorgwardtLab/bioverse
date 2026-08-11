@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class EnrichmentFactorMetric(Metric):
+    """Enrichment factor at a fixed false-positive rate."""
+
     better = "higher"
 
     def __init__(self, name="Enrichment Factor", cutoff_fraction=0.2, **kwargs):

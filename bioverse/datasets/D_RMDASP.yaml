@@ -1,3 +1,6 @@
+description: Aspirin molecular dynamics trajectories from the revised MD benchmark.
+citation: Chmiela et al. "Machine Learning Accurate Exchange and Correlation Functionals
+  of the Electronic Density." Nature Communications 10, 3887 (2019). https://doi.org/10.1038/s41467-019-12827-2
 adapter:
   RevisedMolecularDynamicsAdapter:
     name: aspirin

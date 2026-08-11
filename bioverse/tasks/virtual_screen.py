@@ -5,6 +5,8 @@ from ..task import Task
 
 class VirtualScreenTask(Task):
 
+    """Score ligand-target pairs for virtual screening."""
+
     def __call__(self, vbatch, assets, index):
         X = vbatch[index["scene"], index["frame"], index["molecule"]]
         targets = []

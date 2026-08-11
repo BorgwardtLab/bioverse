@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class FmaxMetric(Metric):
+    """Maximum F1 score over classification thresholds."""
+
     better = "higher"
 
     def __init__(self, name="Fmax", **kwargs):

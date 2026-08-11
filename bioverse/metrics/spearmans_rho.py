@@ -1,33 +1,31 @@
 import awkward as ak
+import numpy as np
 
 from ..metric import Metric
 
 
 class SpearmansRhoMetric(Metric):
+    """Spearman rank correlation between predictions and targets."""
+
     better = "higher"
 
     def __init__(self, name="Spearman", **kwargs):
         super().__init__(name=name, **kwargs)
 
     def compute(self, y_true, y_pred):
-        print("metric")
+        y_true = ak.to_numpy(ak.ravel(y_true))
+        y_pred = ak.to_numpy(ak.ravel(y_pred))
 
-        def rank(data):
-            sorter = ak.argsort(data, axis=-1)
-            inv = ak.argsort(sorter, axis=-1)
-            ranks = ak.local_index(data, axis=-1) + 1
-            return ranks[inv]
+        def rank(values):
+            order = np.argsort(values, kind="mergesort")
+            ranks = np.empty_like(order, dtype=np.float64)
+            ranks[order] = np.arange(1, len(values) + 1, dtype=np.float64)
+            return ranks
 
         y_true_rank = rank(y_true)
         y_pred_rank = rank(y_pred)
-
         d = y_true_rank - y_pred_rank
-        d_squared = d * d
-
-        n = ak.num(y_true, axis=-1)
-        numerator = 6 * ak.sum(d_squared, axis=-1)
-        denominator = n * (n * n - 1)
-
-        spearmans_rho = 1 - numerator / denominator
-
-        return spearmans_rho
+        n = len(y_true)
+        if n < 2:
+            return float("nan")
+        return float(1 - 6 * np.sum(d * d) / (n * (n * n - 1)))

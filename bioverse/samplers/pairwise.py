@@ -9,6 +9,8 @@ from ..utilities import flatten
 
 class PairwiseSampler(Sampler):
 
+    """Sample ordered pairs of molecules for pairwise tasks."""
+
     def index(self, toc, mask):
         molecules = toc[mask]["chain"]
         index = ak.zip([ak.local_index(molecules, i) for i in range(molecules.ndim)])

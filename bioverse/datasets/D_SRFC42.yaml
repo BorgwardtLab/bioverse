@@ -1,7 +1,12 @@
+description: Surface-residue-filtered CATH domains from ProteinInvBench for inverse
+  folding.
+citation: 'Li et al. "ProteinInvBench: Benchmarking Protein Inverse Folding on Diverse
+  Structures." (ProteinInvBench repository; see A4Bio/ProteinInvBench for the current
+  citation).'
 adapter: ProteinInvBenchAdapter
 transforms:
-    - ResiduePositions:
-    - IsSurfaceResidue:
-    - FilterResiduesByValue:
-        attribute: residue_is_surface
-        value: 1
+- ResiduePositions: null
+- IsSurfaceResidue: null
+- FilterResiduesByValue:
+    attribute: residue_is_surface
+    value: 1

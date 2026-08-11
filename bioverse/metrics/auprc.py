@@ -6,6 +6,8 @@ from ..utilities.array import cumsum, diff
 
 
 class AuprcMetric(Metric):
+    """Area under the precision-recall curve."""
+
     better = "higher"
 
     def __init__(self, name="AUPRC", **kwargs):

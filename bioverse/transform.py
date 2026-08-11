@@ -10,6 +10,37 @@ from .utilities import IteratorWithLength, note, parallelize, rebatch
 
 
 class Transform:
+    """Modify batches, splits, and assets in a scikit-learn-style pipeline.
+
+    Transforms follow a ``fit`` → ``transform`` lifecycle. Offline transforms
+    are applied via :meth:`~bioverse.dataset.Dataset.apply` and materialized
+    to disk; live transforms run at load time via
+    :meth:`~bioverse.dataset.Dataset.live`.
+
+    Override :meth:`transform_batch`, :meth:`transform_split`, and/or
+    :meth:`transform_assets` to implement specific operations. Set
+    :attr:`filter` to ``"scenes"`` to drop scenes marked by a
+    ``scene_filter`` column.
+
+    Examples
+    --------
+    Offline transform applied when building a dataset:
+
+    .. code-block:: python
+
+       from bioverse.transforms import TokenizeResidues, KnnGraph
+
+       dataset.apply(TokenizeResidues(), KnnGraph(k=16))
+
+    Live augmentation attached to a benchmark:
+
+    .. code-block:: python
+
+       from bioverse.transforms import Random2DRotate
+
+       benchmark.live(Random2DRotate())
+    """
+
     filter: bool | str = False
 
     def __call__(
@@ -96,6 +127,18 @@ class Transform:
 
 
 class Compose(Transform):
+    """Apply a sequence of transforms in order.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       from bioverse.transform import Compose
+       from bioverse.transforms import TokenizeResidues, KnnGraph
+
+       pipeline = Compose(TokenizeResidues(), KnnGraph(k=16))
+       batches, split, assets = pipeline(batches, split, assets)
+    """
 
     def __init__(self, *transforms: Transform):
         self.transforms = transforms

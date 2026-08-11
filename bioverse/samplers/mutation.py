@@ -7,6 +7,8 @@ from ..utilities import flatten
 
 class MutationSampler(Sampler):
 
+    """Sample indices at the mutation level for mutational scans."""
+
     def index(self, toc, mask):
         scenes = np.repeat(np.arange(len(toc["mutations"])), toc["mutations"])[mask]
         mutations = np.concatenate([np.arange(m) for m in toc["mutations"]])[mask]

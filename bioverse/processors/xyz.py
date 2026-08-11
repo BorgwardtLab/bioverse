@@ -7,6 +7,8 @@ from ..processor import Processor
 
 class XyzProcessor(Processor):
 
+    """Parse XYZ coordinate files into Awkward records."""
+
     valid_extensions = [".xyz"]
 
     @classmethod

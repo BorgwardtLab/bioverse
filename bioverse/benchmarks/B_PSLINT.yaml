@@ -1,0 +1,18 @@
+description: Protein–ligand binding site residue prediction on ProteinShake interface
+  data.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
+dataset: D_PSLINT
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: binding_site
+    level: residue
+    resolution: residue
+metric:
+- AurocMetric:
+    'on': 2
+    per: 1
+- AuprcMetric:
+    'on': 2
+    per: 1

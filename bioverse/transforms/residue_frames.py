@@ -11,6 +11,8 @@ def normalize(v, axis=-1, eps=1e-8):
 
 class ResidueFrames(Transform):
 
+    """Compute or add residue frames features to batches."""
+
     def __init__(self):
         pass
 

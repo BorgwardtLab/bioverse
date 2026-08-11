@@ -1,5 +1,6 @@
 venv/
 __pycache__/
+docs/build/
 .*
 !.gitignore
 !.github/
@@ -12,3 +13,6 @@ print_profile.py
 install.txt
 profile.txt
 bioverse.egg-info/
+bioverse_ml.egg-info/
+scripts/
+legacy/

@@ -5,6 +5,8 @@ from ..metric import Metric
 
 
 class MacroPrecisionMetric(Metric):
+    """Macro-averaged precision over classes."""
+
     better = "higher"
 
     def __init__(self, name="Precision", **kwargs):

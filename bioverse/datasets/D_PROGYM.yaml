@@ -1,1 +1,4 @@
+description: Deep mutational scanning assays and structures from ProteinGym.
+citation: 'Notin et al. "ProteinGym: Large-Scale Benchmarks for Protein Fitness Prediction
+  and Design." NeurIPS Datasets and Benchmarks Track (2023).'
 adapter: ProteinGymAdapter

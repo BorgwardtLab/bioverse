@@ -63,6 +63,8 @@ def BenchmarkFactory(cfg: str | Path | dict) -> Benchmark:
 
     # Create the benchmark class
     class BenchmarkInstance(Benchmark):
+        """Benchmark subclass dynamically created from a ``B_*.yaml`` config."""
+
         name = cfg["name"]
         dataset = DatasetFactory(cfg["dataset"])
         sampler = _load_module(cfg["sampler"], "samplers")
@@ -99,6 +101,8 @@ def DatasetFactory(cfg: str | Path | dict | list) -> Dataset:
     if "parent" in cfg:
 
         class DatasetInstance(Dataset):
+            """Dataset subclass that derives shards from a parent dataset."""
+
             name = cfg["name"]
 
             def release(self):
@@ -113,6 +117,8 @@ def DatasetFactory(cfg: str | Path | dict | list) -> Dataset:
         adapter = _load_module(name, "adapters")
 
         class DatasetInstance(Dataset):
+            """Dataset subclass that builds shards from an adapter download."""
+
             name = cfg["name"]
 
             def release(self):
@@ -122,5 +128,23 @@ def DatasetFactory(cfg: str | Path | dict | list) -> Dataset:
     else:
         raise ValueError("Dataset must have either parent or adapter.")
 
-    # Initialize the benchmark instance
-    return DatasetInstance()
+    class _ConfiguredDataset(DatasetInstance):
+        _precomputed = cfg.get("precomputed")
+        _online_default = cfg.get("online", True)
+
+        def __init__(
+            self,
+            root: Path | str | None = None,
+            version: int | None = None,
+            online: bool | None = None,
+        ) -> None:
+            from .utilities import config
+
+            super().__init__(
+                root=root or config.dataset_path,
+                version=version,
+                online=self._online_default if online is None else online,
+                precomputed=self._precomputed,
+            )
+
+    return _ConfiguredDataset()

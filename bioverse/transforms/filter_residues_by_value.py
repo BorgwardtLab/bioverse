@@ -6,6 +6,8 @@ from ..transform import Transform
 
 class FilterResiduesByValue(Transform):
 
+    """Filter batches or scenes based on filter residues by value."""
+
     def __init__(
         self,
         attribute: str,

@@ -6,6 +6,8 @@ from ..transform import Transform
 
 class Standardize(Transform):
 
+    """Standardize features to zero mean and unit variance."""
+
     def __init__(self, field):
         self.field = field
 

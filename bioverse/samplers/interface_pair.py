@@ -6,6 +6,8 @@ from ..sampler import Sampler
 
 class InterfacePairSampler(Sampler):
 
+    """Sample residue pairs at protein-protein interfaces."""
+
     def sample(self, dataset, partition, split, **kwargs):
         self.assets = dataset.assets
         return super().sample(dataset, partition, split, **kwargs)

@@ -20,6 +20,40 @@ from .virtual import VirtualBatch
 
 
 class Benchmark(ABC):
+    """Orchestrate dataset loading, task extraction, and metric evaluation.
+
+    A benchmark binds four components declared as class attributes:
+
+    * :class:`~bioverse.dataset.Dataset`
+    * :class:`~bioverse.sampler.Sampler`
+    * :class:`~bioverse.task.Task`
+    * :class:`~bioverse.metric.Metric`
+
+    :meth:`loader` drives the full path from sampled indices to ``(X, y)``
+    pairs (and optionally collated batches). The
+    :class:`~bioverse.trainer.Trainer` iterates loaders and calls
+    :meth:`update` / :meth:`result` during evaluation.
+
+    Examples
+    --------
+    Using a benchmark config (``B_*.yaml``):
+
+    .. code-block:: python
+
+       from bioverse.factory import BenchmarkFactory
+
+       benchmark = BenchmarkFactory("B_AFCATH")
+       for (X, y), collated in benchmark.loader("train", batch_size=32):
+           ...
+
+    Attaching live transforms:
+
+    .. code-block:: python
+
+       from bioverse.transforms import Random2DRotate
+
+       benchmark.live(Random2DRotate())
+    """
 
     dataset: Dataset
     sampler: Sampler
@@ -107,6 +141,8 @@ class Benchmark(ABC):
             kwargs["random_seed"] = config.seed
 
         class Loader:
+            """Stateful wrapper that increments the random seed on each iteration."""
+
             def __init__(self, loader):
                 self.loader = loader
                 self.args = args

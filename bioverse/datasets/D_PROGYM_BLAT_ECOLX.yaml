@@ -1,4 +1,11 @@
+description: ProteinGym BLAT_ECOLX deep mutational scanning assay with AlphaFold2
+  structures.
+citation:
+- 'Notin et al. "ProteinGym: Large-Scale Benchmarks for Protein Fitness Prediction
+  and Design." NeurIPS Datasets and Benchmarks Track (2023).'
+- Stiffler et al. "Protein Stability Engineering Insights Revealed by High-Throughput
+  Screening." PNAS 112, E3098–E3106 (2015). https://doi.org/10.1073/pnas.1504567112
 adapter:
-    ProteinGymAdapter:
-        assays:
-            - BLAT_ECOLX_Stiffler_2015
+  ProteinGymAdapter:
+    assays:
+    - BLAT_ECOLX_Stiffler_2015

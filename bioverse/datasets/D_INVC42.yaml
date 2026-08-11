@@ -1,1 +1,6 @@
+description: CATH domain structures and sequences from the ProteinInvBench inverse
+  folding suite.
+citation: 'Li et al. "ProteinInvBench: Benchmarking Protein Inverse Folding on Diverse
+  Structures." (ProteinInvBench repository; see A4Bio/ProteinInvBench for the current
+  citation).'
 adapter: ProteinInvBenchAdapter

@@ -9,6 +9,8 @@ from ..utilities import THREE_TO_ONE
 
 
 class CifProcessor(Processor):
+    """Parse mmCIF structure files into Awkward records."""
+
     valid_extensions = [".cif", ".cif.gz"]
 
     @classmethod

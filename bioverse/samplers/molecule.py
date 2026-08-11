@@ -6,6 +6,8 @@ from ..utilities import flatten
 
 class MoleculeSampler(Sampler):
 
+    """Sample one index per molecule in the active split."""
+
     def index(self, toc, mask):
         molecules = toc[mask]["chain"]  # scene filter by split mask
         index = ak.zip([ak.local_index(molecules, i) for i in range(molecules.ndim)])

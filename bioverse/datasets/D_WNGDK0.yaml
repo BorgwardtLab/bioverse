@@ -1,0 +1,10 @@
+description: Protein–ligand docking structures from the Weng lab benchmark (version
+  5.5).
+citation: Weng et al. "Docking Benchmark Version 5.5." (see Weng lab docking benchmark
+  for the current citation).
+adapter:
+  WengDockingAdapter:
+    version: '5.5'
+transforms:
+- DeduplicateAtoms
+- SceneSplit

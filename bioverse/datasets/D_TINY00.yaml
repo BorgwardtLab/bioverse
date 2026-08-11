@@ -1,9 +1,12 @@
+description: Small AlphaFold subset (*M. jannaschii*) for fast local testing and CI.
+citation: Jumper et al. "Highly accurate protein structure prediction with AlphaFold."
+  Nature 596, 583–589 (2021). https://doi.org/10.1038/s41586-021-03819-2
 adapter:
-    AlphaFoldAdapter:
-        name: UP000000805_243232_METJA
+  AlphaFoldAdapter:
+    name: UP000000805_243232_METJA
 transforms:
-    - FilterSequenceLength:
-        max_length: 1024
-    - SceneSplit:
-        test_size: 100
-        val_size: 100
+- FilterSequenceLength:
+    max_length: 1024
+- SceneSplit:
+    test_size: 100
+    val_size: 100

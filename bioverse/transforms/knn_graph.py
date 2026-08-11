@@ -28,6 +28,8 @@ def _knn_graph(x, k, node_nums):
 
 class KnnGraph(Transform):
 
+    """Build a graph representation from knn graph."""
+
     def __init__(self, k=5, symmetric=True, mode="connectivity", resolution="atom"):
         super().__init__()
         self.k = k
@@ -37,7 +39,15 @@ class KnnGraph(Transform):
 
     def transform_batch(self, batch):
         coords = batch.__getattr__(self.resolution + "_pos").to_numpy()
-        node_nums = batch.toc[self.resolution].ravel()
+        x = batch.toc[self.resolution]
+        if self.resolution == "atom":
+            node_nums = ak.to_numpy(x.sum(axis=-1).sum(axis=-1).ravel())
+        elif self.resolution == "residue":
+            node_nums = ak.to_numpy(x.sum(axis=-1).ravel())
+        else:
+            raise ValueError(
+                f"resolution must be 'atom' or 'residue', got {self.resolution!r}"
+            )
         k = min(len(coords) - 1, self.k)
         batch.molecules.molecule_edges = _knn_graph(coords, k, node_nums)
         return batch

@@ -6,6 +6,8 @@ from ..transform import Transform
 
 
 class FilterSequenceLength(Transform):
+    """Filter batches or scenes based on filter sequence length."""
+
     filter = "scenes"
 
     def __init__(self, max_length: int):

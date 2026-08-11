@@ -6,6 +6,8 @@ from ..utilities import PROTEIN_ALPHABET
 
 
 class MaskedResiduePredictionTask(Task):
+    """Predict masked residue identities or properties."""
+
     def __init__(self):
         codes = np.char.encode(
             ak.ravel(list(PROTEIN_ALPHABET)).to_list(), "utf-8"

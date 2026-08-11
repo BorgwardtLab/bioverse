@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class BalancedMultiClassAccuracyMetric(Metric):
+    """Balanced accuracy averaged over classes."""
+
     better = "higher"
 
     def __init__(self, name="Bal.Acc.", **kwargs):

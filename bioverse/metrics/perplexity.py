@@ -5,6 +5,8 @@ from ..metric import Metric
 
 
 class PerplexityMetric(Metric):
+    """Perplexity of a language-model distribution."""
+
     better = "lower"
 
     def __init__(self, name="Perplexity", **kwargs):

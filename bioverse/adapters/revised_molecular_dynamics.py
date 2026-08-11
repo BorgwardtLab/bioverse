@@ -6,7 +6,7 @@ from ..utilities import ATOM_ALPHABET, IteratorWithLength, batched, config, down
 
 
 class RevisedMolecularDynamicsAdapter(Adapter):
-    """Adapter for rMD17."""
+    """Download revised MD17 (rMD17) molecular dynamics trajectories."""
 
     @classmethod
     def download(cls, name):

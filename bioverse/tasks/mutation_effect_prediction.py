@@ -14,6 +14,8 @@ def _mutation_table(scenes, field, row):
 
 class MutationEffectPredictionTask(Task):
 
+    """Predict the effect of amino-acid mutations."""
+
     def __init__(self, resolution="residue") -> None:
         super().__init__()
         self.resolution = resolution

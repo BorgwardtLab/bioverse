@@ -18,6 +18,7 @@ DATASETS = [
     "EnzymeCommissionDataset",
     "ProteinFamilyDataset",
     "ProteinProteinInterfaceDataset",
+    "ProteinLigandInterfaceDataset",
     "ProteinLigandDecoysDataset",
     "AlphaFoldDataset_swissprot",
 ]
@@ -49,6 +50,7 @@ OPTIONAL_FIELDS = (
     ("RSA", "residue_RSA"),
     ("pLDDT", "residue_pLDDT"),
     ("is_interface", "residue_is_interface"),
+    ("binding_site", "residue_binding_site"),
 )
 
 
@@ -93,6 +95,16 @@ def convert_protein(protein: dict) -> ak.Record:
         if key in atom:
             data[target] = unflat(atom[key]).firsts(2)
 
+    residue = protein.get("residue", {})
+    if "binding_site" in residue and "residue_binding_site" not in data:
+        data["residue_binding_site"] = (
+            ak.Array(residue["binding_site"])
+            .unflatten(chain_sizes)
+            .unflatten(residue_sizes, 1)
+            .firsts(2)
+            .firsts(1)
+        )
+
     return ak.Record({k: v[np.newaxis, np.newaxis] for k, v in data.items()})
 
 
@@ -101,7 +113,7 @@ def residue_count(protein: dict) -> int:
 
 
 class ProteinShakeAdapter(Adapter):
-    """Adapter for ProteinShake precomputed datasets hosted on Zenodo."""
+    """Download biomolecular structure datasets from ProteinShake."""
 
     @classmethod
     def download(cls, dataset: str):

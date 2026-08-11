@@ -9,6 +9,13 @@ import numpy as np
 
 
 class BatchProxy:
+    """Attribute-access wrapper for nested :class:`Batch` hierarchy levels.
+
+    ``BatchProxy`` tracks nesting depth so that attribute access like
+    ``batch.molecules.residue_pos`` returns appropriately flattened Awkward
+    arrays without manual indexing.
+    """
+
     def __init__(self, batch: Batch, nesting: List[int] = []):
         self.batch = batch
         self.nesting = nesting
@@ -115,6 +122,24 @@ class BatchProxy:
 
 
 class Batch:
+    """One shard of structured biomolecular data.
+
+    A batch stores nested Awkward arrays keyed by ``{level}_{property}`` (e.g.
+    ``residue_pos``, ``molecule_label``) together with a table-of-contents
+    (``toc``) that records how many elements exist at each hierarchy level:
+    scene → frame → molecule → chain → residue → atom.
+
+    Batches support attribute-style access via :class:`BatchProxy` and fancy
+    indexing to select subsets across the hierarchy.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       batch = Batch({"residue_pos": pos, "residue_token": tokens})
+       coords = batch.residues.residue_pos
+       subset = batch[0]  # first scene
+    """
 
     def __init__(
         self,
@@ -247,6 +272,20 @@ class Batch:
 
 
 class Split:
+    """Train/validation/test partition assignments for dataset elements.
+
+    Splits map named partitions (``"train"``, ``"val"``, ``"test"``, …) to
+    integer labels per hierarchy level. Keys must end with ``_split`` and
+    reference a valid level (``scene_split``, ``molecule_split``, etc.).
+
+    Examples
+    --------
+    .. code-block:: python
+
+       split = Split({"scene_split": ["train", "train", "val", "test"]})
+       train_mask = split["train"]       # default split name
+       val_mask = split["default", "val"]
+    """
 
     def __init__(
         self,
@@ -308,4 +347,17 @@ class Split:
 
 
 class Assets(dict):
+    """Shared lookup tables referenced across dataset batches.
+
+    Assets hold vocabularies, embedding matrices, ID maps, and other
+    resources that are too large or too static to duplicate in every batch.
+    Tasks and live transforms read from assets at load time.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       assets = Assets({"residue_tokens": ["ALA", "GLY", ...], "residue_features": emb})
+    """
+
     pass

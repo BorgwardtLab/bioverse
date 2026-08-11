@@ -1,5 +1,8 @@
+description: ProteinShake enzyme commission (EC) classification structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 adapter:
-    ProteinShakeAdapter:
-        dataset: EnzymeCommissionDataset
+  ProteinShakeAdapter:
+    dataset: EnzymeCommissionDataset
 transforms:
-    - DeduplicateAtoms
+- DeduplicateAtoms

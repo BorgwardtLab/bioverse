@@ -1,8 +1,11 @@
+description: SCOP fold classification on ProteinShake structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSSCOP
 sampler: MoleculeSampler
 task:
-    PropertyPredictionTask:
-        property: scop_fa
+  PropertyPredictionTask:
+    property: scop_fa
 metric:
 - MultiClassAccuracyMetric
 - MacroPrecisionMetric

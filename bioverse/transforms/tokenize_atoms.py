@@ -8,6 +8,8 @@ from ..utilities import BIOCHEMICAL_ATOM_ALPHABET
 
 class TokenizeAtoms(Transform):
 
+    """Tokenize atoms into integer indices using dataset assets."""
+
     def __init__(self, alphabet=BIOCHEMICAL_ATOM_ALPHABET):
         self.alphabet = alphabet
         if not type(alphabet) == list:

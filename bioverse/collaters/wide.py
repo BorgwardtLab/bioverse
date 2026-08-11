@@ -6,6 +6,8 @@ from ..collater import Collater
 
 class Data(object):
 
+    """Container for wide-format collated batch data."""
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             if not value is None:
@@ -29,6 +31,8 @@ class Data(object):
 
 
 class WideCollater(Collater):
+
+    """Collate batches into wide-format tensors with fixed dimensions."""
 
     @classmethod
     def collate(cls, X, y=None, attr=[], assets=None) -> Data:

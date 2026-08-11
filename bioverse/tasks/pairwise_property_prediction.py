@@ -6,6 +6,8 @@ from ..task import Task
 
 class PairwisePropertyPredictionTask(Task):
 
+    """Predict a property for pairs of molecules."""
+
     def __init__(
         self,
         meta: str,

@@ -6,6 +6,8 @@ from ..transform import Transform
 
 class LinearResidueGraph(Transform):
 
+    """Build a graph representation from linear residue graph."""
+
     def transform_batch(self, batch):
         edges = []
         for coords in batch.molecules.residue_pos:  # type: ignore

@@ -5,6 +5,8 @@ from ..transform import Transform
 
 class TokenizeProperty(Transform):
 
+    """Tokenize properties into integer indices using dataset assets."""
+
     def __init__(self, field, alphabet):
         self.field = field
         self.alphabet = alphabet

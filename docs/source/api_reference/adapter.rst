@@ -1,7 +1,17 @@
 Adapter
 =======
 
-Adapters provide an interface to raw data repositories. They provide the download logic to place structure files and meta data to a local directory (:py:data:`~bioverse.utilities.config.raw_path`). After download, they construct the initial :py:class:`~bioverse.data.Data`-iterator, as well as :py:class:`~bioverse.data.Split` and :py:class:`~bioverse.data.Assets` objects. Usually, Adapters make use of a :py:class:`~bioverse.processor.Processor` to convert raw structure files to :py:class:`~bioverse.data.Data` objects.
+An **adapter** is the entry point for bringing external data into Bioverse. It
+knows how to fetch or generate raw files from a repository (AlphaFold, ProteinShake,
+PDB, etc.), optionally runs a :class:`~bioverse.processor.Processor` to parse
+structure files, and returns the three objects every downstream component expects:
+a stream of :class:`~bioverse.data.Batch` shards, a :class:`~bioverse.data.Split`
+with train/validation/test partitions, and :class:`~bioverse.data.Assets` for
+auxiliary lookup tables (vocabularies, embeddings, metadata maps).
+
+Adapters are typically invoked once when building or refreshing a
+:class:`~bioverse.dataset.Dataset`. See :doc:`../implementations/adapters` for
+available sources.
 
 .. automodule:: bioverse.adapter
    :members: Adapter

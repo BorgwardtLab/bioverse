@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 import os
 import shutil
+import tarfile
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
@@ -23,41 +24,68 @@ from .utilities import (
     rebatch,
     save,
     save_shards,
+    zip_file,
 )
+from .utilities.precomputed import Precomputed, fetch_precomputed
 from .virtual import VirtualBatch
 
 
 class Dataset(ABC):
+    """Versioned, on-disk collection of sharded biomolecular data.
+
+    Datasets persist batches under ``config.dataset_path/<Name>/v<version>/``.
+    Offline :class:`~bioverse.transform.Transform` pipelines are materialized
+    to a content-addressed subdirectory; live transforms run at load time.
+
+    Subclasses implement :meth:`release` to produce batches from an adapter or
+    upstream source. Dataset configs (``D_*.yaml``) reference adapters and
+    transform lists.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       from bioverse.factory import DatasetFactory
+
+       dataset = DatasetFactory("D_AFCATH")
+       dataset.apply(TokenizeResidues())
+       print(len(dataset), dataset.split.names)
+    """
 
     def __init__(
         self,
         root: Path | str = config.dataset_path,
         version: int | None = None,
         online: bool = True,
+        precomputed: dict | Precomputed | None = None,
     ) -> None:
         self.root = Path(root)
         self.croot = Path(root) / self.name
         self.online = online
+        self.precomputed = (
+            precomputed
+            if isinstance(precomputed, Precomputed) or precomputed is None
+            else Precomputed(precomputed)
+        )
         self.transform = Compose(Identity())
         self.live_transform = Compose(Identity())
         if version is None:
-            if online and not self.latest_online_version is None:
+            if online and self.latest_online_version is not None:
                 version = self.latest_online_version
-                if not os.path.exists(self.croot / f"v{version}"):
-                    info(f"There is a newer version {version} available.")
-            else:
-                local_version = self.latest_local_version
-                if not local_version is None:
-                    info(f"Loading latest local version {local_version}.")
-                    version = local_version
+                if not self._is_materialized(version):
+                    info(f"There is a newer version {version} available online.")
+            elif self.latest_local_version is not None:
+                info(f"Loading latest local version {self.latest_local_version}.")
+                version = self.latest_local_version
         version = version or self.bump_version
-        if not os.path.exists(self.croot / f"v{version}") and not (
-            online and not self.download(version) is None
-        ):
-            info(f"Could not find dataset. Running a release.")
-            self.run_release(version)
-            info(f"Released version {version}.")
         self.version = version
+        if not self._is_materialized(version):
+            if online and self.download(version) is not None:
+                info(f"Downloaded precomputed version {version}.")
+            else:
+                info("Could not find dataset. Running a release.")
+                self.run_release(version)
+                info(f"Released version {version}.")
         self.path = self.croot / f"v{version}" / self.transform.hash()
         self.clear_property_caches()
         if not os.path.exists(self.path / "transform.pkl"):
@@ -82,12 +110,30 @@ class Dataset(ABC):
 
     @property
     def latest_online_version(self) -> int | None:
-        return None
+        if self.precomputed is None:
+            return None
+        return self.precomputed.latest_version
+
+    def _materialized_path(self, version: int, transform_hash: str | None = None) -> Path:
+        transform_hash = transform_hash or self.transform.hash()
+        return self.croot / f"v{version}" / transform_hash
+
+    def _is_materialized(
+        self, version: int, transform_hash: str | None = None
+    ) -> bool:
+        return (self._materialized_path(version, transform_hash) / "num_shards.json").is_file()
 
     def download(self, version: int) -> int | None:
-        # if dataset is not hosted or version does not exist online: return None
-        # download version to self.croot
+        if self._fetch_precomputed(version):
+            return version
         return None
+
+    def _fetch_precomputed(
+        self, version: int, transform_hash: str | None = None
+    ) -> bool:
+        transform_hash = transform_hash or self.transform.hash()
+        dest = self._materialized_path(version, transform_hash)
+        return fetch_precomputed(self.precomputed, version, dest, transform_hash)
 
     def save(
         self,
@@ -155,16 +201,28 @@ class Dataset(ABC):
     def apply(self, *transforms: Transform) -> None:
         self.transform = Compose(*transforms)
         new_path = self.croot / f"v{self.version}" / self.transform.hash()
-        if not os.path.exists(new_path):
-            shards, split, assets = self.transform(self.shards, self.split, self.assets)
-            save_shards(shards, new_path)
-            split.save(new_path)
-            save(assets, new_path / "assets.json")
-            save(self.transform, new_path / "transform.pkl")
-        else:
+        transform_path = new_path / "transform.pkl"
+        if not self._is_materialized(self.version, self.transform.hash()):
+            if self.online and self._fetch_precomputed(
+                self.version, self.transform.hash()
+            ):
+                note("Downloaded precomputed transform.")
+            else:
+                if new_path.exists():
+                    shutil.rmtree(new_path)
+                shards, split, assets = self.transform(
+                    self.shards, self.split, self.assets
+                )
+                save_shards(shards, new_path)
+                split.save(new_path)
+                save(assets, new_path / "assets.json")
+                save(self.transform, transform_path)
+        elif transform_path.is_file():
             note("Data were already transformed. Loading from disk.")
             note(str(new_path))
-            self.transform = load(new_path / "transform.pkl")  # for fitted values
+            self.transform = load(transform_path)  # for fitted values
+        else:
+            save(self.transform, transform_path)
         self.path = new_path
         self.clear_property_caches()
 
@@ -175,8 +233,21 @@ class Dataset(ABC):
     def release(self) -> Tuple[Iterator[Batch], Split, Assets]:
         raise NotImplementedError
 
-    def package(self) -> None:
-        pass
+    def package(self, dest: Path | str | None = None) -> Path:
+        """Archive the current dataset version for upload to a repository."""
+        if dest is None:
+            dest = (
+                self.croot
+                / f"{self.name}_v{self.version}_{self.transform.hash()[:8]}.tar.gz"
+            )
+        dest = Path(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        archive = dest.with_suffix(".tar")
+        with tarfile.open(archive, "w") as tar:
+            tar.add(self.path, arcname=self.transform.hash())
+        zip_file(archive, dest, remove=True)
+        note(f"Packaged dataset to {dest}")
+        return dest
 
     def run_release(self, version: int) -> None:
         batches, split, assets = self.release()
@@ -209,6 +280,11 @@ class Dataset(ABC):
 
 
 class ComposedDataset:
+    """Concatenate multiple datasets into a single shard stream.
+
+    Used internally when combining datasets with ``dataset_a + dataset_b``.
+    Splits are not yet merged across constituents (see source TODO).
+    """
 
     def __init__(self, *datasets: Dataset | ComposedDataset) -> None:
         self.shards = iter([])

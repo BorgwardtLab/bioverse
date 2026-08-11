@@ -5,26 +5,16 @@ from ..transform import Transform
 
 
 class BackboneNodeRbf(Transform):
-    """
-    Compute per-residue RBF-expanded *within-residue* backbone distance
-    features (node-level), using the 6 backbone atom pairs inside each residue.
+    """Compute per-residue RBF-expanded within-residue backbone distance features.
 
-    For each residue and each backbone atom pair in:
-        ["Ca-N", "Ca-C", "Ca-O", "N-C", "N-O", "O-C"]
-    we compute the Euclidean distance between the two atoms within the same
-    residue, expand it with a Gaussian RBF basis, and concatenate across
-    pairs. This yields, per residue:
+    For each residue, computes Euclidean distances between the six intra-residue
+    backbone atom pairs (Ca-N, Ca-C, Ca-O, N-C, N-O, O-C), expands each distance
+    with a Gaussian RBF basis, and concatenates the result into
+    ``6 * D_count`` node features per residue.
 
-        6 * D_count features
-
-    Requires:
-      - `batch.residues.residue_backbone` with shape [N_res, 4, 3]
-        (N, CA, C, O) from `ResidueBackboneAtoms`.
-
-    Produces:
-      - `batch.residues.residue_node_rbf` with shape
-        [N_res, 6 * D_count], suitable to be concatenated into
-        PiFold-style node features.
+    Depends on ``batch.residues.residue_backbone`` from
+    :class:`~bioverse.transforms.residue_backbone_atoms.ResidueBackboneAtoms`.
+    Writes ``batch.residues.residue_node_rbf``.
     """
 
     def __init__(self, D_min: float = 0.0, D_max: float = 20.0, D_count: int = 16):

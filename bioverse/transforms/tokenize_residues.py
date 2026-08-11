@@ -6,6 +6,8 @@ from ..utilities import PROTEIN_ALPHABET
 
 class TokenizeResidues(Transform):
 
+    """Tokenize residues into integer indices using dataset assets."""
+
     def __init__(self, alphabet=PROTEIN_ALPHABET):
         self.alphabet = alphabet
         self.tokens = {aa: idx for idx, aa in enumerate(alphabet)}

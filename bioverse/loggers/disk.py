@@ -10,6 +10,8 @@ from ..utilities import save
 
 class DiskLogger(Logger):
 
+    """Write training logs and checkpoints to disk."""
+
     def __init__(self, trainer):
         super().__init__(trainer)
         self.trainer = trainer

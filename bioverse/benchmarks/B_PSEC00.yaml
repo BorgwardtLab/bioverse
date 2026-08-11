@@ -1,9 +1,12 @@
+description: Enzyme commission (EC) multi-class classification on ProteinShake structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSEC00
 sampler: MoleculeSampler
 task:
-    PropertyPredictionTask:
-        property: ec1
-        resolution: residue
+  PropertyPredictionTask:
+    property: ec1
+    resolution: residue
 metric:
 - MultiClassAccuracyMetric
 - MacroPrecisionMetric

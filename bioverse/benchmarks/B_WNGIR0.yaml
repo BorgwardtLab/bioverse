@@ -1,0 +1,13 @@
+description: Protein–ligand interface RMSD (iRMSD) regression on Weng docking benchmark
+  structures.
+citation: Weng et al. "Docking Benchmark Version 5.5." (see Weng lab docking benchmark
+  for the current citation).
+dataset: D_WNGDK0
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: irmsd
+    resolution: residue
+metric:
+- MeanAbsoluteErrorMetric
+- SpearmansRhoMetric

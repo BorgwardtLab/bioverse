@@ -5,6 +5,8 @@ from ..metric import Metric
 
 
 class MacroRecallMetric(Metric):
+    """Macro-averaged recall over classes."""
+
     better = "higher"
 
     def __init__(self, name="Recall", **kwargs):

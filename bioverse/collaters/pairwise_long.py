@@ -5,6 +5,8 @@ from .long import LongCollater
 
 
 class PairwiseData:
+    """Pair of collated samples for pairwise prediction tasks."""
+
     def __init__(self, data1, data2, y=None, _sizes=None):
         self.data1 = data1
         self.data2 = data2
@@ -13,11 +15,15 @@ class PairwiseData:
 
     def uncollate(self, y):
         if self._sizes is not None:
+            if hasattr(y, "numpy"):
+                y = y.numpy()
             y = ak.unflatten(y, self._sizes, axis=0)
         return ak.Array({"target": y})
 
 
 class PairwiseLongCollater(Collater):
+
+    """Collate pairwise batches into padded long-format tensors."""
 
     @classmethod
     def collate(cls, X, y=None, attr=[], assets=None):

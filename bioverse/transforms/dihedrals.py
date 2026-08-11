@@ -7,6 +7,8 @@ from ..utilities import normalize
 
 class Dihedrals(Transform):
 
+    """Compute or add dihedrals features to batches."""
+
     def __init__(self, eps=1e-7):
         self.eps = eps
 

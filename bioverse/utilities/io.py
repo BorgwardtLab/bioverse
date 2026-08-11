@@ -102,6 +102,8 @@ def load(path: Path | str, default: Any = None) -> Any:
 
 
 class IteratorWithLength(Iterator):
+    """Iterator wrapper that exposes ``__len__`` for progress tracking."""
+
     def __init__(self, iterator: Iterator, length: int | None = None):
         if length is None:
             iterator, copy = itertools.tee(iterator)
@@ -462,6 +464,8 @@ def to_pdb(
 
 
 class LRUCache(OrderedDict):
+    """Least-recently-used cache for shard loading."""
+
     def __init__(self, size: int = config.cache_size):
         super().__init__()
         self.size = size

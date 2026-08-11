@@ -1,6 +1,0 @@
-dataset: D_RNA3DB
-sampler: MoleculeSampler
-task: StructurePredictionTask
-metric:
-    TmScoreMetric:
-        type: RNA

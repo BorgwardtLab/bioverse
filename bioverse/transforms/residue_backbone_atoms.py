@@ -6,6 +6,8 @@ from ..transform import Transform
 
 class ResidueBackboneAtoms(Transform):
 
+    """Compute or add residue backbone atoms features to batches."""
+
     def transform_batch(self, batch):
         # filter residues with missing atoms
         mask = (

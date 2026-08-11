@@ -1,9 +1,12 @@
+description: Pairwise TM-score (lDDT) regression on ProteinShake structural alignments.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSTMAL
 sampler: PairwiseSampler
 task:
-    PairwisePropertyPredictionTask:
-        meta: lddt
-        level: molecule
+  PairwisePropertyPredictionTask:
+    meta: lddt
+    level: molecule
 metric:
+- MeanAbsoluteErrorMetric
 - SpearmansRhoMetric
-- MeanSquaredErrorMetric

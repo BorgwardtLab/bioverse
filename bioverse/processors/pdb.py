@@ -6,11 +6,22 @@ from biopandas.pdb import PandasPdb
 from biopandas.pdb.engines import amino3to1dict
 
 from ..processor import Processor
+from ..utilities.id_mapping import uniprot_from_alphafold_path
 
 
 class PdbProcessor(Processor):
+    """Parse PDB structure files into Awkward records.
+
+    Walks a directory tree, reads ``.pdb`` / ``.pdb.gz`` files, and emits one
+    record per structure with scene/frame/molecule/residue/atom fields.
+    Subclass for dataset-specific filename or metadata conventions.
+    """
 
     valid_extensions = [".pdb", ".pdb.gz"]
+
+    @classmethod
+    def exclude_key(cls, path: Path | str) -> str | None:
+        return uniprot_from_alphafold_path(path)
 
     @classmethod
     def process_file(cls, path: str | Path, pLDDT: bool = False) -> ak.Record:

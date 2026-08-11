@@ -1,3 +1,7 @@
+description: Inverse folding on ProteinShake AlphaFold Swiss-Prot structures with
+  top-k recovery metrics.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSAFSP
 sampler: MoleculeSampler
 task: InverseFoldingTask

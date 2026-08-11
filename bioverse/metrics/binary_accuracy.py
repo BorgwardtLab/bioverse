@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class BinaryAccuracyMetric(Metric):
+    """Accuracy for binary classification tasks."""
+
     better = "higher"
 
     def __init__(self, name="Accuracy", threshold=0.5, **kwargs):

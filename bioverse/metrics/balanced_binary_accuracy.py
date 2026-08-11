@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class BalancedBinaryAccuracyMetric(Metric):
+    """Balanced accuracy for binary classification."""
+
     better = "higher"
 
     def __init__(self, name="Bal.Acc.", threshold=0.5, **kwargs):

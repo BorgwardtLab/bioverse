@@ -15,7 +15,7 @@ from ..utilities import (
 
 
 class ProteinInvBenchAdapter(Adapter):
-    """Adapter for ProteinInvBench."""
+    """Download sequences and structures for the ProteinInvBench inverse folding suite."""
 
     @classmethod
     def download(cls):

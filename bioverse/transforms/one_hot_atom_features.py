@@ -8,6 +8,8 @@ from ..utilities import BIOCHEMICAL_ATOM_ALPHABET
 
 class OneHotAtomFeatures(Transform):
 
+    """One-hot encode atom features from token indices."""
+
     def __init__(self, alphabet=BIOCHEMICAL_ATOM_ALPHABET):
         self.alphabet = alphabet
         if not type(alphabet) == list:

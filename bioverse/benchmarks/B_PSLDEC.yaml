@@ -1,3 +1,7 @@
+description: Virtual screening on protein–ligand decoys with enrichment and mean active
+  rank metrics.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSLDEC
 sampler: MoleculeSampler
 task: VirtualScreenTask

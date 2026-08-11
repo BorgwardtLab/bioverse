@@ -5,6 +5,8 @@ from ..metric import Metric
 
 
 class MeanAbsoluteErrorMetric(Metric):
+    """Mean absolute error between predictions and targets."""
+
     better = "lower"
 
     def __init__(self, name="MAE", **kwargs):

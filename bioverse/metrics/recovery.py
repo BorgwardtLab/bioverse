@@ -2,6 +2,8 @@ from .multi_class_accuracy import MultiClassAccuracyMetric
 
 
 class RecoveryMetric(MultiClassAccuracyMetric):
+    """Sequence recovery rate (fraction of correctly predicted residues)."""
+
     better = "higher"
 
     def __init__(self, name="Recovery", on=2, per=1, **kwargs):

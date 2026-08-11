@@ -1,3 +1,7 @@
+description: Protein mutational effect prediction on ProteinGym deep mutational scanning
+  data.
+citation: 'Notin et al. "ProteinGym: Large-Scale Benchmarks for Protein Fitness Prediction
+  and Design." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PROGYM
 sampler: MutationSampler
 task: MutationEffectPredictionTask

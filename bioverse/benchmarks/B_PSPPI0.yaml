@@ -1,9 +1,12 @@
+description: Protein–protein interface contact prediction on ProteinShake structures.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSPPI0
 sampler: InterfacePairSampler
 task:
-    PairwisePropertyPredictionTask:
-        meta: interface_contacts
-        level: molecule
+  PairwisePropertyPredictionTask:
+    meta: interface_contacts
+    level: molecule
 metric:
 - AurocMetric
 - AuprcMetric

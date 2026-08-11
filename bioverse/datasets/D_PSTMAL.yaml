@@ -1,5 +1,8 @@
+description: ProteinShake TM-align structural similarity pairs.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 adapter:
-    ProteinShakeAdapter:
-        dataset: TMAlignDataset
+  ProteinShakeAdapter:
+    dataset: TMAlignDataset
 transforms:
-    - DeduplicateAtoms
+- DeduplicateAtoms

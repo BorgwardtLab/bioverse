@@ -6,6 +6,8 @@ from ..transform import Transform
 
 class Rbf(Transform):
 
+    """Compute or add rbf features to batches."""
+
     def __init__(self, D_min=0.0, D_max=20.0, D_count=16):
         super().__init__()
         self.D_min = D_min

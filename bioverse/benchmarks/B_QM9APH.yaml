@@ -1,6 +1,9 @@
+description: QM9 isotropic polarizability (alpha) regression.
+citation: Ramakrishnan et al. "Quantum Chemistry Structures and Properties of 134
+  Kilo Molecules." Scientific Data 1, 140022 (2014). https://doi.org/10.1038/sdata.2014.22
 dataset: D_QNTMA9
 sampler: MoleculeSampler
 task:
-    PropertyPredictionTask:
-        property: alpha
+  PropertyPredictionTask:
+    property: alpha
 metric: MeanAbsoluteErrorMetric

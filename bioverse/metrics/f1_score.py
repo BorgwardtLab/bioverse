@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class F1ScoreMetric(Metric):
+    """F1 score (harmonic mean of precision and recall)."""
+
     better = "higher"
 
     def __init__(self, name="Accuracy", **kwargs):

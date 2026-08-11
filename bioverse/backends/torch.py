@@ -4,6 +4,8 @@ from bioverse.backend import Backend
 
 
 class TorchBackend(Backend):
+    """PyTorch training backend with DDP and mixed-precision support."""
+
     def __init__(
         self,
         trainer,
@@ -71,12 +73,14 @@ class TorchBackend(Backend):
                 except Exception:
                     pass
             return
+        cpu_keys = {"num_vertices", "num_molecules", "num_edges", "_sizes"}
         for key, value in vars(data).items():
-            if not key.startswith("_"):
-                try:
-                    setattr(data, key, ak.to_torch(value).to(self.fabric.device))
-                except Exception:
-                    pass
+            if key.startswith("_") or key in cpu_keys:
+                continue
+            try:
+                setattr(data, key, ak.to_torch(value).to(self.fabric.device))
+            except Exception:
+                pass
 
     def train_step(self, Xy, data):
         self.put_on_device(data)

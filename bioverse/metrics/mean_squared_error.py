@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class MeanSquaredErrorMetric(Metric):
+    """Mean squared error between predictions and targets."""
+
     better = "lower"
 
     def __init__(self, name="MSE", **kwargs):

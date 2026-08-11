@@ -1,10 +1,11 @@
+description: Inverse folding on CATH domains; evaluates sequence recovery and BLOSUM
+  score.
+citation: 'Li et al. "ProteinInvBench: Benchmarking Protein Inverse Folding on Diverse
+  Structures." (ProteinInvBench repository; see A4Bio/ProteinInvBench for the current
+  citation).'
 dataset: D_INVC42
 sampler: MoleculeSampler
 task: InverseFoldingTask
 metric:
-  - RecoveryMetric:
-  - TopkRecoveryMetric:
-      k: 2
-  - TopkRecoveryMetric:
-      k: 3
-  
+- RecoveryMetric: null
+- BlosumScoreMetric: null

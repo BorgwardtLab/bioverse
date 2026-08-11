@@ -1,3 +1,7 @@
+description: Atom-resolution inverse folding on ProteinInvBench CATH domains.
+citation: 'Li et al. "ProteinInvBench: Benchmarking Protein Inverse Folding on Diverse
+  Structures." (ProteinInvBench repository; see A4Bio/ProteinInvBench for the current
+  citation).'
 dataset: D_INVC42
 sampler: MoleculeSampler
 task:

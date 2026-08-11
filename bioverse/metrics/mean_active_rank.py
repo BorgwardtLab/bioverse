@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class MeanActiveRankMetric(Metric):
+    """Mean rank of actives in virtual screening."""
+
     better = "higher"
 
     def __init__(self, name="Mean Active Rank", **kwargs):

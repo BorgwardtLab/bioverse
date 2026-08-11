@@ -16,6 +16,8 @@ def _first_atom_mask(labels):
 
 class DeduplicateAtoms(Transform):
 
+    """Compute or add deduplicate atoms features to batches."""
+
     def transform_batch(self, batch):
         mask = ak.Array(
             [

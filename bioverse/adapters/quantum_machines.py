@@ -11,7 +11,7 @@ QM9_PROPS = ["A", "B", "C", "mu", "alpha", "homo", "lumo", "gap", "r2", "zpve", 
 
 
 class QuantumMachinesAdapter(Adapter):
-    """Adapter for QM9."""
+    """Download small-molecule properties from the QM9 (Quantum Machines) dataset."""
 
     @classmethod
     def download(cls):

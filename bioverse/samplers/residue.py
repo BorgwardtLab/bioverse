@@ -9,6 +9,8 @@ from ..utilities import flatten
 
 class ResidueSampler(Sampler):
 
+    """Sample one index per residue in the active split."""
+
     def __init__(self, num_residues: Union[int, float] = 1):
         self.num_residues = num_residues
 

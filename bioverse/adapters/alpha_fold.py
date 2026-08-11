@@ -5,7 +5,7 @@ from ..utilities import batched, config, download, glob_delete
 
 
 class AlphaFoldAdapter(Adapter):
-    """Adapter for AlphaFoldDB."""
+    """Download protein structures from the AlphaFold Protein Structure Database."""
 
     @classmethod
     def download(cls, name="swissprot_pdb", version="v4"):

@@ -10,6 +10,8 @@ from ..utilities import save
 
 class CometLogger(Logger):
 
+    """Log metrics and artifacts to Comet ML."""
+
     def __init__(
         self, trainer, api_key=None, project_name="Bioverse", experiment_name=None
     ):

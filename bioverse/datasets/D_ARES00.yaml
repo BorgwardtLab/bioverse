@@ -1,1 +1,4 @@
+description: RNA structure models from the ARES puzzle benchmark.
+citation: Townshend et al. "Geometric Deep Learning of RNA Structure." Science 373,
+  1047–1051 (2021). https://doi.org/10.1126/science.abe5650
 adapter: AresAdapter

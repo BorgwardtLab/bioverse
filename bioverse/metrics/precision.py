@@ -4,6 +4,8 @@ from ..metric import Metric
 
 
 class PrecisionMetric(Metric):
+    """Precision (positive predictive value)."""
+
     better = "higher"
 
     def __init__(self, name="Precision", **kwargs):

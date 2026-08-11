@@ -5,6 +5,8 @@ from ..utilities.array import cumsum, diff
 
 
 class AurocMetric(Metric):
+    """Area under the receiver operating characteristic curve."""
+
     better = "higher"
 
     def __init__(self, name="AUROC", **kwargs):

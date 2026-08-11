@@ -7,6 +7,8 @@ from ..utilities import normalize
 
 class EdgePosEmb(Transform):
 
+    """Compute or add edge pos emb features to batches."""
+
     def __init__(self, num_embeddings=16, period_range=[2, 1000]):
         self.num_embeddings = num_embeddings
         self.period_range = period_range

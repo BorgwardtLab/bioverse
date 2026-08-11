@@ -12,6 +12,30 @@ from .utilities import console, flatten
 
 
 class Metric(ABC):
+    """Score model predictions against ground truth.
+
+    Metrics accumulate ``y_true`` and ``y_pred`` arrays across evaluation
+    batches via :meth:`update`, then compute a scalar in :meth:`compute`.
+    :class:`~bioverse.benchmark.Benchmark` calls :meth:`update` during
+    validation and test; :meth:`result` returns a formatted
+    :class:`Result`.
+
+    Set :attr:`better` to ``"higher"`` or ``"lower"`` for leaderboard sorting.
+    Use ``property`` to select which field of a structured target array to
+    score.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       from bioverse.metrics import MeanAbsoluteErrorMetric
+
+       metric = MeanAbsoluteErrorMetric(property="target")
+       metric.update(y_true, y_pred)
+       result = metric.result(model_name="MyModel")
+       result.to_console()
+    """
+
     better = "higher"
 
     def __init__(
@@ -93,6 +117,21 @@ class Metric(ABC):
 
 
 class MultiMetric:
+    """Combine multiple :class:`Metric` instances into one evaluation pass.
+
+    Metrics are updated and reduced independently. Use ``+`` to build a
+    :class:`MultiMetric` from individual metrics.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       from bioverse.metrics import MeanAbsoluteErrorMetric, PearsonsRMetric
+
+       metrics = MeanAbsoluteErrorMetric() + PearsonsRMetric()
+       metrics.update(y_true, y_pred)
+       metrics.result().to_console()
+    """
 
     def __init__(self, metrics=[]) -> None:
         self.metrics = metrics
@@ -123,6 +162,13 @@ class MultiMetric:
 
 
 class Result:
+    """Formatted collection of metric scores for display and export.
+
+    Results aggregate rows of ``{Model, Metric, Value}`` dictionaries and track
+    whether higher or lower values are better per metric. Supports console,
+    LaTeX, and dictionary export via :meth:`to_console`, :meth:`to_latex`, and
+    :meth:`to_dict`.
+    """
 
     def __init__(self, data=[], better={}) -> None:
         self.data = data

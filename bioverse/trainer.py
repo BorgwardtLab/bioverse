@@ -5,6 +5,36 @@ from bioverse.utilities import config, save
 
 
 class Trainer:
+    """High-level training and evaluation loop for Bioverse benchmarks.
+
+    The trainer wires a user model to a :class:`~bioverse.benchmark.Benchmark`
+    through a :class:`~bioverse.backend.Backend`, :class:`~bioverse.collater.Collater`,
+    and :class:`~bioverse.logger.Logger`. It handles checkpointing, validation
+    scheduling, and distributed training configuration.
+
+    Instantiate from a YAML experiment config or directly in Python, then call
+    :meth:`run` with ``"train"``, ``"val"``, or ``"test"``.
+
+    Examples
+    --------
+    From the CLI (recommended):
+
+    .. code-block:: bash
+
+       bioverse train experiment.yaml
+
+    In Python:
+
+    .. code-block:: python
+
+       from bioverse import Trainer
+       from bioverse.factory import BenchmarkFactory
+
+       benchmark = BenchmarkFactory("B_AFCATH")
+       trainer = Trainer(model, benchmark, epochs=100, batch_size=32)
+       trainer.run("train")
+    """
+
     def __init__(
         self,
         model,
@@ -43,6 +73,7 @@ class Trainer:
         val_partition_name="val",
         test_partition_name="test",
         pre_partition_name="pre",
+        limit_train_batches=None,
     ):
         config.workers = workers
         config.seed = random_seed
@@ -67,6 +98,7 @@ class Trainer:
         self.test_partition_name = test_partition_name
         self.pre_partition_name = pre_partition_name
         self.initial_validation = initial_validation
+        self.limit_train_batches = limit_train_batches
 
         self.benchmark = benchmark
         self.model = model
@@ -116,11 +148,16 @@ class Trainer:
                 scratch=self.scratch,
                 attr=self.loader_attr,
             )
-            for Xy, data in loader:
+            for batch_idx, (Xy, data) in enumerate(loader):
                 self.step += 1
                 loss, output, target = self.backend.train_step(Xy, data)
                 if self.step % self.log_every == 0:
                     self.logger.log_loss(loss, mode="train")
+                if (
+                    self.limit_train_batches is not None
+                    and batch_idx + 1 >= self.limit_train_batches
+                ):
+                    break
             if not self.val_partition_name is None:
                 self.run_eval("val")
             if (

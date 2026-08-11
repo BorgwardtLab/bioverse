@@ -6,6 +6,8 @@ from ..sampler import Sampler
 
 class FrameSampler(Sampler):
 
+    """Sample one index per frame in the active split partition."""
+
     def index(self, toc, mask):
         num_frames = np.sum(mask)
         index = ak.Array(

@@ -58,7 +58,7 @@ docs = [
 
 [project.urls]
 Homepage = "https://github.com/BorgwardtLab/bioverse"
-Documentation = "https://bvrs.readthedocs.io/"
+Documentation = "https://borgwardtlab.github.io/bioverse/"
 Repository = "https://github.com/BorgwardtLab/bioverse"
 "Bug Tracker" = "https://github.com/BorgwardtLab/bioverse/issues"
 

@@ -1,3 +1,6 @@
+description: Inverse folding on ProteinShake RCSB structures with top-k recovery metrics.
+citation: 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven
+  Protein Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
 dataset: D_PSRCSB
 sampler: MoleculeSampler
 task: InverseFoldingTask

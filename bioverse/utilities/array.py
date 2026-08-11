@@ -6,6 +6,8 @@ import numpy as np
 
 
 class ArrayExtensions:
+    """Namespace for Awkward Array extension methods registered at import time."""
+
     def __getattr__(self, where: str) -> Any:
         if hasattr(type(self), where):
             return super().__getattribute__(where)

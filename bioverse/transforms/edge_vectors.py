@@ -6,6 +6,8 @@ from ..transform import Transform
 
 class EdgeVectors(Transform):
 
+    """Compute or add edge vectors features to batches."""
+
     def transform_batch(self, batch):
         edge_index = batch.molecules.molecule_edges
         pos = batch.molecules.residue_pos

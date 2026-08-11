@@ -3,7 +3,28 @@ import numpy as np
 import pytest
 from sklearn import metrics as sk_metrics
 
-from bioverse.metrics import *
+from bioverse.metrics import (
+    AuprcMetric,
+    AurocMetric,
+    BalancedBinaryAccuracyMetric,
+    BalancedMultiClassAccuracyMetric,
+    BinaryAccuracyMetric,
+    BlosumScoreMetric,
+    CoefficientOfDeterminationMetric,
+    F1ScoreMetric,
+    MeanAbsoluteErrorMetric,
+    MeanAngularErrorMetric,
+    MeanSquaredErrorMetric,
+    MultiClassAccuracyMetric,
+    MultiLabelAccuracyMetric,
+    PearsonsRMetric,
+    PerplexityMetric,
+    PrecisionMetric,
+    RecallMetric,
+    RecoveryMetric,
+    SpearmansRhoMetric,
+    TopKAccuracyMetric,
+)
 
 
 @pytest.fixture
@@ -120,9 +141,7 @@ def test_f1_score(binary_data):
 
 def test_auroc(binary_data):
     y_true, y_pred = binary_data
-    metric = AreaUnderReceiverOperatingCharacteristicCurveMetric(
-        on=2, per=1, reduction="mean"
-    )
+    metric = AurocMetric(on=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_auroc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_aurocs = []
@@ -134,7 +153,7 @@ def test_auroc(binary_data):
 
 def test_auprc(binary_data):
     y_true, y_pred = binary_data
-    metric = AreaUnderPrecisionRecallCurveMetric(on=2, per=1, reduction="mean")
+    metric = AuprcMetric(on=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_auprc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_auprcs = []
@@ -225,6 +244,21 @@ def test_recovery(multiclass_data):
     assert recovery >= 0 and recovery <= 1
 
 
+def test_blosum_score(multiclass_data):
+    from bioverse.utilities import BLOSUM62
+
+    y_true, y_pred = multiclass_data
+    metric = BlosumScoreMetric(on=2, per=1, reduction="mean")
+    metric.update(y_true, y_pred)
+    bio_score = list(metric.result().to_dict()["Ours"].values())[0]
+
+    expected_scores = []
+    for yt, yp in zip(y_true["label"], y_pred["label"]):
+        yp_idx = np.argmax(yp, axis=-1)
+        expected_scores.append(np.mean(BLOSUM62[yt, yp_idx]))
+    np.testing.assert_allclose(bio_score, np.mean(expected_scores), rtol=1e-5)
+
+
 def test_balanced_multiclass_accuracy(multiclass_data):
     y_true, y_pred = multiclass_data
     metric = BalancedMultiClassAccuracyMetric(on=2, per=1, reduction="mean")
@@ -252,3 +286,12 @@ def test_multilabel_accuracy(multilabel_data):
         sk_multilabel_accuracies.append(sk_metrics.accuracy_score(yt, yp > threshold))
     sk_multilabel_accuracy = np.mean(sk_multilabel_accuracies)
     np.testing.assert_allclose(multilabel_accuracy, sk_multilabel_accuracy, rtol=1e-5)
+
+
+def test_mean_angular_error():
+    y_true = ak.Array({"target": ak.Array([[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])})
+    y_pred = ak.Array({"target": ak.Array([[[1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]])})
+    metric = MeanAngularErrorMetric()
+    metric.update(y_true, y_pred)
+    angular_mae = list(metric.result().to_dict()["Ours"].values())[0]
+    np.testing.assert_allclose(angular_mae, 45.0, rtol=1e-5)

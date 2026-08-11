@@ -9,9 +9,46 @@ from .utilities import SHARD_SIZE, config
 
 
 class Sampler(ABC):
+    """Select which dataset elements form each training or evaluation batch.
+
+    Samplers map the dataset table-of-contents (``toc``) and an active split
+    partition to Awkward index arrays at the scene, frame, molecule, or residue
+    level. :meth:`sample` groups those indices into batches according to
+    ``batch_size``, ``batch_on``, and distributed-training settings.
+
+    Subclasses implement :meth:`index`. Common strategies include sampling
+    every molecule (:class:`~bioverse.samplers.molecule.MoleculeSampler`) or
+    every frame (:class:`~bioverse.samplers.frame.FrameSampler`).
+
+    Examples
+    --------
+    .. code-block:: python
+
+       from bioverse.samplers import MoleculeSampler
+
+       sampler = MoleculeSampler()
+       batch_indices = sampler.sample(
+           dataset, partition="train", split="default", batch_size=32
+       )
+    """
 
     @abstractmethod
-    def index(self, toc: ak.Array) -> ak.Array:
+    def index(self, toc: ak.Array, mask: ak.Array) -> ak.Array:
+        """Return row indices for elements in the active split partition.
+
+        Parameters
+        ----------
+        toc
+            Table-of-contents array describing dataset size at each level.
+        mask
+            Boolean mask selecting scenes in the current partition.
+
+        Returns
+        -------
+        ak.Array
+            Structured index with fields such as ``scene``, ``frame``,
+            ``molecule``.
+        """
         raise NotImplementedError
 
     def sample(

@@ -6,6 +6,8 @@ from ..utilities import PROTEIN_ALPHABET
 
 class OneHotResidueFeatures(Transform):
 
+    """One-hot encode residues features."""
+
     def __init__(self, alphabet=PROTEIN_ALPHABET):
         self.alphabet = alphabet
 

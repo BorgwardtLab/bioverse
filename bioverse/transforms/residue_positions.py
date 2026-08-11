@@ -5,6 +5,8 @@ from ..transform import Transform
 
 
 class ResiduePositions(Transform):
+    """Compute or add residue positions features to batches."""
+
     def __init__(self, mode="CA"):
         assert mode in ["CA", "COW", "C1'"]
         self.mode = mode

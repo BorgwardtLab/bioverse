@@ -5,6 +5,8 @@ from ..metric import Metric
 
 
 class PearsonsRMetric(Metric):
+    """Pearson correlation coefficient between predictions and targets."""
+
     better = "higher"
 
     def __init__(self, name="Pearson", **kwargs):
