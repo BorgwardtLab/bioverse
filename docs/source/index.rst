@@ -1,6 +1,6 @@
 .. image:: ../../assets/bioverse_logo.png
    :alt: Bioverse
-   :align: center
+   :align: left
    :width: 360px
 
 |

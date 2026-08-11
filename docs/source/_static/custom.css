@@ -105,7 +105,18 @@ html:not(.dark) .hover\:text-accent-foreground:hover {
   color: #4A6B4E;
 }
 
-/* Logo & header */
+/* Logo & header — logo-only branding (text is in the image) */
+header a.flex.items-center span.font-bold {
+  display: none;
+}
+
+header a.flex.items-center img {
+  width: auto;
+  height: 2.25rem;
+  max-width: min(180px, 40vw);
+  margin-right: 0;
+}
+
 html:not(.dark) header .font-bold {
   color: #4A6B4E;
 }
