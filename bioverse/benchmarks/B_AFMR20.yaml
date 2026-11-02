@@ -7,4 +7,6 @@ sampler:
   ResidueSampler:
     num_residues: 0.2
 task: MaskedResiduePredictionTask
-metric: RecoveryMetric
+metric:
+- RecoveryMetric: null
+- BlosumScoreMetric: null

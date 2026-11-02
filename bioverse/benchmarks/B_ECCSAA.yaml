@@ -1,0 +1,31 @@
+description: Residue-level catalytic-site attribution evaluation against M-CSA annotations.
+citation:
+- 'Ribeiro et al. "Mechanism and Catalytic Site Atlas." Nucleic Acids Research (2018).'
+dataset: D_ECACSA
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: catalytic_site
+    level: residue
+    resolution: residue
+metric:
+- MeanCatalyticRankMetric:
+    property: target
+- TopKRecallMetric:
+    property: target
+    k: 5
+- TopKRecallMetric:
+    property: target
+    k: 10
+- TopKRecallMetric:
+    property: target
+    k: 20
+- TopKPrecisionMetric:
+    property: target
+    k: 5
+- TopKPrecisionMetric:
+    property: target
+    k: 10
+- TopKPrecisionMetric:
+    property: target
+    k: 20

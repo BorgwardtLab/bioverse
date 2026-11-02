@@ -16,7 +16,15 @@ from .sampler import Sampler
 from .task import Task
 from .transform import Transform
 from .utilities import config, load, parallelize
+from .utilities.mp_pool import pack_loader_result, unpack_loader_result
 from .virtual import VirtualBatch
+
+
+def _loader_worker(batch_index, path, assets, live_transform, task, collater, attr):
+    vbatch = VirtualBatch(path, assets, live_transform)
+    Xy = task(vbatch, assets, batch_index)
+    data = collater(*Xy, attr=attr, assets=assets) if collater else None
+    return Xy, data
 
 
 class Benchmark(ABC):
@@ -196,12 +204,15 @@ class Benchmark(ABC):
 
         # todo: maybe apply live transforms to assets and splits
 
-        def worker(batch_index):
-            vbatch = VirtualBatch(path, assets, live_transform)
-            Xy = task(vbatch, assets, batch_index)
-            data = collater(*Xy, attr=attr, assets=assets) if collater else None
-            return Xy, data
-
+        worker = partial(
+            _loader_worker,
+            path=path,
+            assets=assets,
+            live_transform=live_transform,
+            task=task,
+            collater=collater,
+            attr=attr,
+        )
         return parallelize(
             worker,
             index,
@@ -209,6 +220,8 @@ class Benchmark(ABC):
             progress=progress and rank == 0,
             total=len(index),
             max_workers=10,
+            pack=pack_loader_result,
+            unpack=unpack_loader_result,
         )
 
     def update(self, y_true: ak.Array, y_pred: ak.Array) -> None:

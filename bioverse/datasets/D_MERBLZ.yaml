@@ -1,0 +1,12 @@
+description: MEROPS P6–P4′ cleavage windows as protein–peptide complexes. One
+  Boltz-2 fold of each protease with its canonical substrate is reused for every
+  other observed window by relabeling peptide residues. Train/val/test follow
+  the D_MEROPS random mutation split.
+citation: Rawlings, Barrett, Thomas, Huang, Bateman, and Finn. "The MEROPS database
+  of proteolytic enzymes, their substrates and inhibitors in 2017 and a comparison
+  with peptidases in the PANTHER database." Nucleic Acids Research 46, D624–D632 (2018).
+  https://doi.org/10.1093/nar/gkx1134
+online: false
+adapter:
+  .adapters.merops_boltz.MeropsBoltzAdapter:
+    work_dir: results/merops_boltz/work

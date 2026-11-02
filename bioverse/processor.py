@@ -40,6 +40,7 @@ class Processor(ABC):
         path: Path | str | list[Path | str],
         shuffle: bool = True,
         exclude: Iterable[str] | None = None,
+        limit: int | None = None,
     ) -> IteratorWithLength[ak.Record]:
         note("Building file tree for processing.")
         exclude_set = set(exclude) if exclude is not None else None
@@ -63,6 +64,8 @@ class Processor(ABC):
         files = sorted(files)
         if shuffle:
             np.random.default_rng(config.seed).shuffle(files)
+        if limit is not None:
+            files = files[:limit]
         processed = parallelize(
             cls.process_file,
             files,

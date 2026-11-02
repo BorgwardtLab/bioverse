@@ -48,6 +48,11 @@ def test_compile_foldseek_exclusions(tmp_path, monkeypatch):
         "PDB,CHAIN,SP_PRIMARY,RES_BEG,RES_END,PDB_BEG,PDB_END,SP_BEG,SP_END\n"
         "12as,A,P00963,1,9,,9,1,9\n"
     )
+    cath = tmp_path / "CATH/v4_2_0"
+    cath.mkdir(parents=True)
+    (cath / "cath-domain-boundaries-seqreschopping-v4_2_0.txt").write_text(
+        "12asA00\t1-9\n"
+    )
     monkeypatch.setattr(config, "raw_path", tmp_path)
 
     hits = tmp_path / "hits.m8"
@@ -85,6 +90,19 @@ def test_adapter_download_excludes_structures(tmp_path, monkeypatch):
         Path(__file__).parent / "dummy" / "dummy.pdb",
         af_path / "AF-P01000-F1-model_v4.pdb",
     )
+    invbench = raw_path / "ProteinInvBench/data/cath4.2"
+    invbench.mkdir(parents=True)
+    (invbench / "chain_set_splits.json").write_text(
+        '{"train": [], "validation": [], "test": []}'
+    )
+    sifts = raw_path / "SIFTS"
+    sifts.mkdir()
+    (sifts / "pdb_chain_uniprot.csv").write_text(
+        "PDB,CHAIN,SP_PRIMARY,RES_BEG,RES_END,PDB_BEG,PDB_END,SP_BEG,SP_END\n"
+    )
+    cath = raw_path / "CATH/v4_2_0"
+    cath.mkdir(parents=True)
+    (cath / "cath-domain-boundaries-seqreschopping-v4_2_0.txt").write_text("")
     monkeypatch.setattr(config, "raw_path", raw_path)
     config.workers = 1
     monkeypatch.setattr(adapter_mod, "EXCLUDED_UNIPROTS", frozenset({"P01000"}))
@@ -92,4 +110,49 @@ def test_adapter_download_excludes_structures(tmp_path, monkeypatch):
     batch = next(iter(batches))
 
     assert assets["exclusions"]["count"] == 1
+    assert assets["exclusions"]["foldseek_count"] == 1
+    assert assets["exclusions"]["test_domain_count"] == 0
     assert len(batch) == 1
+
+
+def test_adapter_excludes_test_cath_domains(tmp_path, monkeypatch):
+    import bioverse.adapters.alpha_fold_exclusion as adapter_mod
+    from bioverse.utilities import config
+
+    raw_path = tmp_path / "raw"
+    af_path = raw_path / "AlphaFoldDB/v4/swissprot_pdb"
+    af_path.mkdir(parents=True)
+    shutil.copy(
+        Path(__file__).parent / "dummy" / "dummy.pdb",
+        af_path / "AF-P00963-F1-model_v4.pdb",
+    )
+    shutil.copy(
+        Path(__file__).parent / "dummy" / "dummy.pdb",
+        af_path / "AF-P01000-F1-model_v4.pdb",
+    )
+    invbench = raw_path / "ProteinInvBench/data/cath4.2"
+    invbench.mkdir(parents=True)
+    (invbench / "chain_set_splits.json").write_text(
+        '{"train": [], "validation": [], "test": ["12as.A"]}'
+    )
+    sifts = raw_path / "SIFTS"
+    sifts.mkdir()
+    (sifts / "pdb_chain_uniprot.csv").write_text(
+        "PDB,CHAIN,SP_PRIMARY,RES_BEG,RES_END,PDB_BEG,PDB_END,SP_BEG,SP_END\n"
+        "12as,A,P00963,1,9,,9,1,9\n"
+    )
+    cath = raw_path / "CATH/v4_2_0"
+    cath.mkdir(parents=True)
+    (cath / "cath-domain-boundaries-seqreschopping-v4_2_0.txt").write_text(
+        "12asA00\t1-9\n"
+    )
+    monkeypatch.setattr(config, "raw_path", raw_path)
+    config.workers = 1
+    monkeypatch.setattr(adapter_mod, "EXCLUDED_UNIPROTS", frozenset())
+    batches, split, assets = adapter_mod.AlphaFoldExclusionAdapter.download()
+    batch = next(iter(batches))
+
+    assert assets["exclusions"]["test_domain_count"] == 1
+    assert assets["exclusions"]["count"] == 1
+    assert len(batch) == 1
+    assert batch.data["molecule_id"][0][0][0] == "AF-P01000-F1-model_v4"

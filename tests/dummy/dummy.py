@@ -41,4 +41,6 @@ def dummy_scene():
 
 
 def dummy_batches(n=10):
-    return batched(dummy_scene() for _ in range(n))
+    from bioverse.utilities.io import IteratorWithLength
+
+    return batched(IteratorWithLength((dummy_scene() for _ in range(n)), length=n))

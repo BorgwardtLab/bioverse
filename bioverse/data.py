@@ -1,11 +1,153 @@
 from __future__ import annotations
 
 import json
+import pickle
 from pathlib import Path
 from typing import Any, List, Tuple, cast
 
 import awkward as ak
 import numpy as np
+
+
+_TOC_REFERENCE_COLUMNS = {
+    "molecule": ("molecule_id",),
+    "chain": ("chain_label",),
+    "residue": ("residue_number", "residue_label"),
+    "atom": ("atom_label", "atom_pos"),
+}
+
+
+def _reference_column(data: dict[str, ak.Array], prefix: str) -> str | None:
+    """Pick a stable, non-optional column for hierarchy toc counts."""
+    for name in _TOC_REFERENCE_COLUMNS.get(prefix, ()):
+        if name in data:
+            return name
+    for col, arr in data.items():
+        if not (col.startswith(f"{prefix}_") or col == prefix):
+            continue
+        layout = arr.layout
+        if getattr(layout, "is_option", False):
+            continue
+        if type(layout).__name__ == "UnionArray":
+            continue
+        return col
+    return next((col for col in data if col.startswith(prefix)), None)
+
+
+def _as_row_choice(indexer) -> np.ndarray:
+    """Collapse a per-row frame/molecule indexer to a 1-d integer array."""
+    if isinstance(indexer, (int, np.integer)):
+        return np.asarray([int(indexer)], dtype=int)
+    choice = indexer
+    if isinstance(choice, ak.Array):
+        while choice.ndim > 1:
+            try:
+                if ak.all(ak.num(choice, axis=1) == 1):
+                    choice = choice[:, 0]
+                    continue
+            except Exception:
+                pass
+            choice = ak.flatten(choice, axis=1)
+            break
+        return np.asarray(ak.to_numpy(ak.ravel(choice)), dtype=int)
+    return np.asarray(choice, dtype=int).reshape(-1)
+
+
+def _take_next_axis(v, indexer):
+    """Select along axis 1 of a batched array using a per-row indexer.
+
+    Nested ``[[0], [0], ...]`` indexers must not re-slice axis 0. Doing so
+    maps every row onto scene 0, which crashes mixed-scene mutation batches
+    when a later row's mutation index exceeds scene 0's table length.
+    The selected axis is kept as length 1 so Batch TOC can still count
+    scene/frame/molecule levels after indexing.
+    """
+    if getattr(v, "ndim", 0) <= 1:
+        return v[indexer]
+    if isinstance(indexer, slice):
+        return v[(slice(None), indexer)]
+    if isinstance(indexer, (int, np.integer)):
+        start = int(indexer)
+        return v[:, start : start + 1]
+    choice = _as_row_choice(indexer)
+    n = len(v)
+    if len(choice) == 1 and n != 1:
+        choice = np.full(n, int(choice[0]), dtype=int)
+    if len(choice) != n:
+        return v[indexer]
+    try:
+        if np.all(choice == choice[0]):
+            start = int(choice[0])
+            return v[:, start : start + 1]
+    except Exception:
+        pass
+    rows = []
+    for i in range(n):
+        row = v[i]
+        try:
+            if row is None or bool(ak.is_none(row, axis=0)):
+                rows.append(None)
+                continue
+        except Exception:
+            pass
+        rows.append(row[int(choice[i])])
+    return ak.unflatten(ak.Array(rows), 1)
+
+
+def deep_index(v, idx):
+    """Apply a hierarchy of scene/frame/molecule indexers to one field."""
+    if not idx:
+        return v
+    first, rest = idx[0], idx[1:]
+    v = v[first]
+    batched = not isinstance(first, (int, np.integer, slice))
+    for indexer in rest:
+        if batched:
+            v = _take_next_axis(v, indexer)
+        else:
+            v = v[indexer]
+    return v
+
+
+def _placeholder_like(reference: ak.Array, length: int) -> ak.Array:
+    """Option-None array of ``length`` matching ``reference``'s inner type.
+
+    Concatenating a missing field with ``ak.ones_like(toc)`` yields float
+    placeholders. Mixing those with a string column such as
+    ``molecule_enzyme_name`` produces an irreducible union that Awkward
+    cannot jagged-index during molecule sampling.
+    """
+    if length <= 0:
+        return ak.Array([])
+    return ak.Array([None] * length)
+
+
+def _apply_hierarchy_mask(array: ak.Array, mask: ak.Array) -> ak.Array:
+    """Apply a nested boolean/integer mask, including optional columns.
+
+    Optional fields such as ``residue_SASA`` are stored as an
+    ``IndexedOptionArray`` whose content only contains scenes that have
+    values. Indexing that content with a mask over every scene fails
+    (inner ListArray length 402 vs slice length 1000). Compact both sides,
+    apply the mask to present scenes, and scatter the result back into the
+    original option slots.
+    """
+    layout = array.layout
+    if not getattr(layout, "is_option", False):
+        return array[mask]
+
+    none = np.asarray(ak.to_numpy(ak.is_none(array, axis=0)))
+    present = ak.to_packed(ak.drop_none(array))
+    present_mask = ak.to_packed(mask[~none])
+    updated = present[present_mask]
+    index = np.full(len(array), -1, dtype=np.int64)
+    index[~none] = np.arange(len(updated), dtype=np.int64)
+    return ak.Array(
+        ak.contents.IndexedOptionArray(
+            ak.index.Index64(index),
+            ak.to_layout(updated, allow_record=False),
+        )
+    )
 
 
 class BatchProxy:
@@ -105,7 +247,9 @@ class BatchProxy:
                     if self.batch.prefixes.index(
                         col.split("_")[0]
                     ) >= self.batch.prefixes.index(prefix):
-                        self.batch.data[col] = self.batch.data[col][mask]
+                        self.batch.data[col] = _apply_hierarchy_mask(
+                            self.batch.data[col], mask
+                        )
                 # update toc
                 if type(ak.ravel(mask)[0]) == np.bool_:  # todo: better type check
                     self.batch.toc[prefix] = ak.sum(mask, axis=-1)
@@ -165,11 +309,15 @@ class Batch:
         # determine the number of elements in each axis
         if data:
             for prefix in prefixes:
-                ref_col = next(
-                    (col for col in data.keys() if col.startswith(prefix)), None
-                )
-                if not ref_col is None:
-                    counts = ak.num(data[ref_col], axis=prefixes.index(prefix))
+                ref_col = _reference_column(data, prefix)
+                axis = prefixes.index(prefix)
+                counts = None
+                if ref_col is not None:
+                    try:
+                        counts = ak.num(data[ref_col], axis=axis)
+                    except Exception:
+                        counts = None
+                if counts is not None:
                     # if not counts.ndim == 0:
                     #     counts = ak.ravel(counts)
                     self.toc[prefix] = counts
@@ -221,11 +369,6 @@ class Batch:
         if not isinstance(index, tuple):
             index = (index,)
 
-        def deep_index(v, idx):
-            for i in idx:
-                v = v[i]
-            return v
-
         # arrays are immutable, so we return a new one
         levels = [
             self.prefixes.index(field.split("_")[0]) + 1 for field in self.data.keys()
@@ -240,25 +383,10 @@ class Batch:
     def __add__(self, other: Batch) -> Batch:
         self_data, other_data, both_data = self.data, other.data, {}
         for field in sorted(set(self_data.keys()) | set(other_data.keys())):
-            prefix = field.split("_")[0]
-            if not field in self_data:
-                if prefix == "scene":
-                    self_data[field] = ak.nan_to_none(
-                        np.ones(self.toc[prefix]) * np.nan
-                    )
-                else:
-                    self_data[field] = ak.nan_to_none(
-                        ak.ones_like(self.toc[prefix]).unflatten(1, -1) * np.nan
-                    )
-            if not field in other_data:
-                if prefix == "scene":
-                    other_data[field] = ak.nan_to_none(
-                        np.ones(other.toc[prefix]) * np.nan
-                    )
-                else:
-                    other_data[field] = ak.nan_to_none(
-                        ak.ones_like(other.toc[prefix]).unflatten(1, -1) * np.nan
-                    )
+            if field not in self_data:
+                self_data[field] = _placeholder_like(other_data[field], len(self))
+            if field not in other_data:
+                other_data[field] = _placeholder_like(self_data[field], len(other))
             both_data[field] = ak.concatenate([self_data[field], other_data[field]])
         return Batch(both_data)
 
@@ -269,6 +397,12 @@ class Batch:
             return Batch(data)
         else:
             return other + self
+
+    def filter_scenes(self, mask: ak.Array) -> Batch:
+        """Return a batch containing only scenes where ``mask`` is True."""
+        keep = ak.to_numpy(mask)
+        data = {field: values[keep] for field, values in self.data.items()}
+        return Batch(data, prefixes=self.prefixes, resolution=self.resolution)
 
 
 class Split:
@@ -326,6 +460,13 @@ class Split:
             other = Split(other)
         return Split({**self.data, **other.data})
 
+    def mask_filter(self, mask: np.ndarray) -> Split:
+        """Return a split with entries selected by a boolean scene mask."""
+        filtered = Split(default=self.default)
+        filtered.data = {k: v[mask] for k, v in self.data.items()}
+        filtered.names = {k: list(v) for k, v in self.names.items()}
+        return filtered
+
     def save(self, path: Path) -> None:
         with open(path / "split.json", "w") as f:
             json.dump({k: v.tolist() for k, v in self.data.items()}, f)
@@ -336,14 +477,46 @@ class Split:
 
     @classmethod
     def load(cls, path: Path) -> Split:
+        path = Path(path)
         split = cls()
-        with open(path / "split.json", "r") as f:
-            split.data = {k: np.array(v) for k, v in json.load(f).items()}
-        with open(path / "split.names.json", "r") as f:
-            split.names = json.load(f)
-        with open(path / "split.default.json", "r") as f:
-            split.default = json.load(f)
-        return split
+        json_path = path / "split.json"
+        ak_path = path / "split.ak"
+        if json_path.is_file():
+            with open(json_path, "r") as f:
+                split.data = {k: np.array(v) for k, v in json.load(f).items()}
+            with open(path / "split.names.json", "r") as f:
+                split.names = json.load(f)
+            default_path = path / "split.default.json"
+            if default_path.is_file():
+                with open(default_path, "r") as f:
+                    split.default = json.load(f)
+            elif split.data:
+                split.default = next(iter(split.data))
+            return split
+        if ak_path.is_file():
+            with open(ak_path, "rb") as f:
+                raw = pickle.load(f)
+            with open(path / "split.names.json", "r") as f:
+                names = json.load(f)
+            values = np.asarray(ak.to_numpy(ak.ravel(ak.Array(raw))))
+            if isinstance(names, list):
+                key = "scene_split"
+                split.names = {key: names}
+                split.data = {key: values}
+                split.default = key
+            else:
+                split.names = names
+                if getattr(raw, "fields", None):
+                    split.data = {
+                        field: np.asarray(ak.to_numpy(ak.ravel(raw[field])))
+                        for field in raw.fields
+                    }
+                else:
+                    key = next(iter(names))
+                    split.data = {key: values}
+                split.default = next(iter(split.data))
+            return split
+        raise FileNotFoundError(f"No split.json or split.ak under {path}")
 
 
 class Assets(dict):

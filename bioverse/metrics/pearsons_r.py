@@ -4,6 +4,21 @@ import numpy as np
 from ..metric import Metric
 
 
+def pearson_r(left, right) -> float:
+    left = np.asarray(left, dtype=np.float64).reshape(-1)
+    right = np.asarray(right, dtype=np.float64).reshape(-1)
+    mask = np.isfinite(left) & np.isfinite(right)
+    left, right = left[mask], right[mask]
+    if left.size < 2:
+        return float("nan")
+    left = left - left.mean()
+    right = right - right.mean()
+    denom = float(np.sqrt(np.sum(left * left) * np.sum(right * right)))
+    if denom == 0.0:
+        return float("nan")
+    return float(np.sum(left * right) / denom)
+
+
 class PearsonsRMetric(Metric):
     """Pearson correlation coefficient between predictions and targets."""
 

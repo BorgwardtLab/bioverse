@@ -21,4 +21,6 @@ class MultiClassAccuracyMetric(Metric):
         if y_pred.ndim > 1:
             y_pred = ak.argmax(y_pred, axis=-1)
         y_pred = ak.to_numpy(ak.ravel(y_pred))
+        if y_true.size == 0 or y_pred.size == 0:
+            return float("nan")
         return float(np.mean(y_true == y_pred))

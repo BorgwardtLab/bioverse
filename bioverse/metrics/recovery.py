@@ -6,5 +6,5 @@ class RecoveryMetric(MultiClassAccuracyMetric):
 
     better = "higher"
 
-    def __init__(self, name="Recovery", on=2, per=1, **kwargs):
-        super().__init__(name=name, on=on, per=per, **kwargs)
+    def __init__(self, name="Recovery", on_axis=2, per=1, reduction="nanmean", **kwargs):
+        super().__init__(name=name, on_axis=on_axis, per=per, reduction=reduction, **kwargs)

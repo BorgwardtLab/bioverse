@@ -1,0 +1,22 @@
+description: Peptide-binding residue contact prediction on BioLiP protein–peptide
+  complexes. The receptor is encoded without the peptide; labels are protein
+  residues within 8 Å Cα of the peptide.
+citation: 'Zhang et al. "BioLiP2: an updated structure database for biologically relevant
+  ligand–protein interactions." Nucleic Acids Research 52, D404–D412 (2024).
+  https://doi.org/10.1093/nar/gkad630 Yang, Roy, and Zhang. "BioLiP: a semi-manually
+  curated database for biologically relevant ligand-protein interactions." Nucleic
+  Acids Research 41, D1096–D1103 (2013). https://doi.org/10.1093/nar/gks1173'
+dataset: D_BLPPEP
+sampler: MoleculeSampler
+task:
+  PocketContactPredictionTask:
+    radius: 8.0
+    drop_peptide: true
+metric:
+- AuprcMetric:
+    on_axis: 2
+    reduction: nanmean
+- AurocMetric:
+    on_axis: 2
+    reduction: nanmean
+- BinaryAccuracyMetric

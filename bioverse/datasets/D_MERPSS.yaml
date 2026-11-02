@@ -1,0 +1,11 @@
+description: MEROPS combinatorial positional specificity profiles expanded to single-site
+  P4–P4′ window variants, with PDB or AlphaFold protease structures. Evaluation-only;
+  every peptidase including TEV and MMP-2/9 is assigned to the test partition.
+citation: Rawlings and Bateman. "How to use the MEROPS database and website to help
+  understand peptidase specificity." Protein Science 30, 83–92 (2021).
+  https://doi.org/10.1002/pro.3948
+adapter:
+  MeropsAdapter:
+    source: combinatorial
+    max_length: 400
+    max_windows: null

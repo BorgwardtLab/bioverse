@@ -97,22 +97,22 @@ def test_metric():
         }
     )
 
-    metric = MultiClassAccuracyMetric(on=3, per=None, reduction=None)
+    metric = MultiClassAccuracyMetric(on_axis=3, per=None, reduction=None)
     for yt, yp in zip(y_true, y_pred):
         metric.update(yt, yp)
     result = metric.result()
 
-    metric = MultiClassAccuracyMetric(on=3, per=0, reduction=None)
+    metric = MultiClassAccuracyMetric(on_axis=3, per=0, reduction=None)
     for yt, yp in zip(y_true, y_pred):
         metric.update(yt, yp)
     result = metric.result()
 
-    metric = MultiClassAccuracyMetric(on=3, per=1, reduction=None)
+    metric = MultiClassAccuracyMetric(on_axis=3, per=1, reduction=None)
     for yt, yp in zip(y_true, y_pred):
         metric.update(yt, yp)
     result = metric.result()
 
-    metric = MultiClassAccuracyMetric(on=3, per=2, reduction=None)
+    metric = MultiClassAccuracyMetric(on_axis=3, per=2, reduction=None)
     for yt, yp in zip(y_true, y_pred):
         metric.update(yt, yp)
     result = metric.result()
@@ -190,6 +190,8 @@ def test_result_class():
     result2 = Result([{"Model": "Model2", "Metric": "Metric2", "Value": 0.90}])
     combined = result + result2
     assert len(combined.data) == 4
+    assert len(result.data) == 3
+    assert len(result2.data) == 1
 
     # Test to_dict method
     result_dict = result.to_dict()
@@ -218,6 +220,32 @@ def test_result_class():
 
     with pytest.raises(NotImplementedError):
         result.to_latex()
+
+
+def test_result_default_list_is_not_shared():
+    first = Result()
+    first += Result([{"Model": "Ours", "Metric": "Recovery", "Value": 0.16}])
+    second = Result()
+    second += Result([{"Model": "Ours", "Metric": "Recovery", "Value": 0.42}])
+    assert [row["Value"] for row in first.data] == [0.16]
+    assert [row["Value"] for row in second.data] == [0.42]
+    formatted = second.format()[0][0]
+    assert formatted["Recovery"][0] == pytest.approx(0.42)
+
+
+def test_multi_metric_result_does_not_accumulate():
+    y_true = ak.Array({"value": [1, 0, 1]})
+    y_pred = ak.Array({"value": [1, 1, 0]})
+    multi = MultiMetric(
+        [TestMetricImpl(name="Metric1"), TestMetricImpl(name="Metric2")]
+    )
+    multi.update(y_true, y_pred)
+    first = multi.result(model_name="Ours")
+    multi.update(y_true, y_pred)
+    second = multi.result(model_name="Ours")
+    assert len(first.data) == 2
+    assert len(second.data) == 2
+    assert first.data is not second.data
 
 
 def test_metric_addition_creates_multi_metric():

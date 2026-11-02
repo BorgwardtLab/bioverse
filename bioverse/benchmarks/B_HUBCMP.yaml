@@ -1,0 +1,17 @@
+description: Zero-shot TEV protease engineering on Huber et al. 2025, scoring predicted
+  protease–substrate compatibility against proteolytic AUC.
+citation: Huber, Kucera et al. "Data-driven protease engineering by DNA-recording and
+  epistasis-aware machine learning." Nature Communications 16, 5808 (2025).
+  https://doi.org/10.1038/s41467-025-60622-7
+dataset: D_HUBCMP
+sampler: MutationSampler
+task:
+  ProteaseSubstrateCompatibilityTask:
+    resolution: residue
+metric:
+  - SpearmansRhoMetric
+  - TopKEnrichmentMetric:
+      k: 10
+  - TopKEnrichmentMetric:
+      k: 30
+split: huber_mutation_split

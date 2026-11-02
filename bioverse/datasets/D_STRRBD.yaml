@@ -1,0 +1,6 @@
+description: SARS-CoV-2 Wuhan-Hu-1 RBD deep mutational scan of ACE2 binding, with a
+  Boltz-2 predicted RBD–ACE2 complex structure.
+citation: Starr, Greaney et al. "Shifting mutational constraints in the SARS-CoV-2
+  receptor-binding domain during viral evolution." Science 377, 420–424 (2022).
+  https://doi.org/10.1126/science.abo7896
+adapter: StarrRbdAdapter

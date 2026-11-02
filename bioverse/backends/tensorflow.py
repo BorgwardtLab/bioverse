@@ -34,6 +34,7 @@ class TensorflowBackend(Backend):
 
         self.tf = tf
         self.trainer = trainer
+        self.clip_grad_norm = clip_grad_norm
         self._pending_checkpoint = None
         self._weights_restored = False
 
@@ -65,7 +66,9 @@ class TensorflowBackend(Backend):
 
         if hasattr(target, "numpy"):
             target = target.numpy()
-        if np.issubdtype(target.dtype, np.floating) and np.all(target == np.floor(target)):
+        if np.issubdtype(target.dtype, np.floating) and np.all(
+            target == np.floor(target)
+        ):
             return target.astype(np.int32)
         return target
 
@@ -79,16 +82,26 @@ class TensorflowBackend(Backend):
                 except Exception:
                     pass
             return
+        cpu_keys = {
+            "num_vertices",
+            "num_molecules",
+            "num_edges",
+            "_sizes",
+            "mutation_pos",
+            "mutation_wt",
+            "mutation_mut",
+        }
         for key, value in vars(data).items():
-            if not key.startswith("_"):
-                try:
-                    setattr(
-                        data,
-                        key,
-                        self._to_tensorflow(value, label=(key == "y")),
-                    )
-                except Exception:
-                    pass
+            if key.startswith("_") or key in cpu_keys:
+                continue
+            try:
+                setattr(
+                    data,
+                    key,
+                    self._to_tensorflow(value, label=(key == "y")),
+                )
+            except Exception:
+                pass
 
     def _checkpoint_items(self, *, epoch=None, step=None, include_optimizer=False):
         tf = self.tf
@@ -116,11 +129,23 @@ class TensorflowBackend(Backend):
     def train_step(self, Xy, data):
         self._maybe_restore_weights(Xy, data)
         self.put_on_device(data)
+        model = self.trainer.model
+        if getattr(model, "device_train_step", None) is not None:
+            loss, output = model.device_train_step(
+                Xy, data, clip_grad_norm=self.clip_grad_norm
+            )
+            return loss.numpy(), output.numpy(), self._target_numpy(data.y)
         with self.tf.GradientTape() as tape:
-            loss, output = self.trainer.model.train_step(Xy, data)
-        variables = getattr(self.trainer.model, "trainable_variables", [])
+            loss, output = model.train_step(Xy, data)
+        variables = getattr(model, "trainable_variables", [])
         grads = tape.gradient(loss, variables)
-        self.trainer.model.optimizer.apply_gradients(zip(grads, variables))
+        pairs = [(g, v) for g, v in zip(grads, variables) if g is not None]
+        if self.clip_grad_norm is not None and pairs:
+            clipped, _ = self.tf.clip_by_global_norm(
+                [g for g, _ in pairs], self.clip_grad_norm
+            )
+            pairs = list(zip(clipped, [v for _, v in pairs]))
+        model.optimizer.apply_gradients(pairs)
         return loss.numpy(), output.numpy(), self._target_numpy(data.y)
 
     def eval_step(self, Xy, data):

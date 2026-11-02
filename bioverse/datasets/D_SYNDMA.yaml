@@ -1,0 +1,15 @@
+description: Synthetic protease DMS, formulation A (ProteinGym mutation prior only).
+  Huber TEV and Cieplak MMP identifiers are excluded. Labels do not use Huber 2025.
+citation: Composed from MEROPS cleavage windows, BioLiP peptide contacts, and
+  ProteinGym Activity/Binding/Stability mutation-effect distributions.
+adapter:
+  SyntheticDmsAdapter:
+    formulation: mutation
+    seed: 0
+    max_length: 400
+    max_windows: 64
+    n_pocket: 28
+    n_offpocket: 12
+    n_cognate: 8
+    n_decoy: 4
+    pocket_source: biolip

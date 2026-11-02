@@ -19,11 +19,13 @@ class DeduplicateAtoms(Transform):
     """Compute or add deduplicate atoms features to batches."""
 
     def transform_batch(self, batch):
+        keys = (
+            batch.residues.atom_name
+            if "atom_name" in batch
+            else batch.residues.atom_label
+        )
         mask = ak.Array(
-            [
-                _first_atom_mask(labels)
-                for labels in ak.to_list(batch.residues.atom_label)
-            ]
+            [_first_atom_mask(labels) for labels in ak.to_list(keys)]
         )
 
         def apply_mask(values):

@@ -1,0 +1,6 @@
+description: Cieplak et al. quantitative MMP-2 and MMP-9 hexamer substrate kcat/KM
+  measurements with PDB or AlphaFold gelatinase structures.
+citation: Ratnikov, Cieplak, Remacle, Nguyen, and Smith. "Quantitative profiling of
+  protease specificity." PLOS Computational Biology 17, e1008101 (2021).
+  https://doi.org/10.1371/journal.pcbi.1008101
+adapter: CieplakAdapter

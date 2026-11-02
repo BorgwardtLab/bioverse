@@ -23,7 +23,7 @@ class TopkRecoveryMetric(Metric):
         self,
         name: str = "Top-k Recovery",
         k: int = 1,
-        on: int = 2,
+        on_axis: int = 2,
         per: int = 1,
         **kwargs,
     ):
@@ -33,11 +33,11 @@ class TopkRecoveryMetric(Metric):
         k : int
             Number of BLOSUM-based substitution ranks to treat as correct.
             k=1 is equivalent to standard Recovery (exact match).
-        on, per :
+        on_axis, per :
             Passed through to the base `Metric` to match `RecoveryMetric`
-            behaviour (defaults: on=2, per=1).
+            behaviour (defaults: on_axis=2, per=1).
         """
-        super().__init__(name=name, on=on, per=per, **kwargs)
+        super().__init__(name=name, on_axis=on_axis, per=per, **kwargs)
         if k < 1:
             raise ValueError("TopkRecoveryMetric requires k >= 1.")
         self.k = int(k)

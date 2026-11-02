@@ -1,12 +1,14 @@
-description: Protein–ligand interface RMSD (iRMSD) regression on Weng docking benchmark
-  structures.
-citation: Weng et al. "Docking Benchmark Version 5.5." (see Weng lab docking benchmark
-  for the current citation).
-dataset: D_WNGDK0
+description: Protein–protein binding affinity (ΔG) regression on Weng Docking Benchmark
+  5.5 complexes labeled by Affinity Benchmark 2. ΔG = RT ln(Kd) at 298.15 K, in kcal/mol.
+citation: 'Vreven et al. "Updates to the Integrated Protein-Protein Interaction Benchmarks:
+  Docking Benchmark Version 5 and Affinity Benchmark Version 2." J. Mol. Biol. 427,
+  3031–3041 (2015). Kastritis et al. "A Structure-Based Benchmark for Protein–Protein
+  Binding Affinity." Protein Sci. 20, 482–491 (2011).'
+dataset: D_WNGAF0
 sampler: MoleculeSampler
 task:
   PropertyPredictionTask:
-    property: irmsd
+    property: dg
     resolution: residue
 metric:
 - MeanAbsoluteErrorMetric

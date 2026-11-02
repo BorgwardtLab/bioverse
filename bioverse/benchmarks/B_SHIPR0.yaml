@@ -1,0 +1,17 @@
+description: Ship-motif presence classification; train/val upright, test rotated.
+citation: Synthetic Bioverse benchmark for equivariant geometric pattern matching on
+  point-cloud graphs (Picasso ship motif).
+citation: Synthetic Bioverse benchmark for equivariant geometric pattern matching on
+  point-cloud graphs (Picasso ship motif).
+dataset: D_SHIPR0
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: present
+    level: molecule
+    resolution: atom
+metric:
+- BinaryAccuracyMetric:
+    threshold: 0.0
+- BalancedBinaryAccuracyMetric:
+    threshold: 0.0

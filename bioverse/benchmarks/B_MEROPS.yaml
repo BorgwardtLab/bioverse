@@ -1,0 +1,16 @@
+description: Weakly supervised protease–substrate compatibility on MEROPS cleavage
+  windows. Validation holds out windows of the same proteases; Huber TEV and Cieplak
+  MMPs are excluded from this split.
+citation: Rawlings, Barrett, Thomas, Huang, Bateman, and Finn. "The MEROPS database
+  of proteolytic enzymes, their substrates and inhibitors in 2017 and a comparison
+  with peptidases in the PANTHER database." Nucleic Acids Research 46, D624–D632 (2018).
+  https://doi.org/10.1093/nar/gkx1134
+dataset: D_MEROPS
+sampler: MutationSampler
+task:
+  ProteaseSubstrateCompatibilityTask:
+    resolution: residue
+metric:
+  - SpearmansRhoMetric
+  - PairwiseRankingAccuracyMetric
+split: random_mutation_split

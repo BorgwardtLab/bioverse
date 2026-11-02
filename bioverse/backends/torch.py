@@ -64,6 +64,8 @@ class TorchBackend(Backend):
         return self.fabric.global_rank
 
     def put_on_device(self, data):
+        import numpy as np
+
         if hasattr(data, "data1") and hasattr(data, "data2"):
             self.put_on_device(data.data1)
             self.put_on_device(data.data2)
@@ -73,9 +75,32 @@ class TorchBackend(Backend):
                 except Exception:
                     pass
             return
-        cpu_keys = {"num_vertices", "num_molecules", "num_edges", "_sizes"}
+        cpu_keys = {
+            "num_vertices",
+            "num_molecules",
+            "num_edges",
+            "_sizes",
+            "mutation_pos",
+            "mutation_wt",
+            "mutation_mut",
+        }
         for key, value in vars(data).items():
             if key.startswith("_") or key in cpu_keys:
+                continue
+            if isinstance(value, self.torch.Tensor):
+                setattr(data, key, value.to(self.fabric.device))
+                continue
+            if isinstance(value, np.ndarray):
+                if value.dtype.kind not in "biufc":
+                    continue
+                try:
+                    setattr(
+                        data,
+                        key,
+                        self.torch.as_tensor(value, device=self.fabric.device),
+                    )
+                except (TypeError, ValueError):
+                    pass
                 continue
             try:
                 setattr(data, key, ak.to_torch(value).to(self.fabric.device))
@@ -123,7 +148,25 @@ class TorchBackend(Backend):
 
     def load_checkpoint(self, path):
         state = self.fabric.load(path.with_suffix(".pt"))
-        self.trainer.model.load_state_dict(state["model"])
-        self.trainer.optimizer.load_state_dict(state["optimizer"])
-        self.trainer.epoch = state["epoch"]
-        self.trainer.step = state["step"]
+        weights = state["model"]
+        if hasattr(weights, "state_dict"):
+            weights = weights.state_dict()
+        if not isinstance(weights, dict):
+            weights = dict(weights)
+        cleaned = {}
+        for key, value in weights.items():
+            name = key
+            for prefix in ("_forward_module.", "module."):
+                if name.startswith(prefix):
+                    name = name[len(prefix) :]
+            cleaned[name] = value
+        self.trainer.model.load_state_dict(
+            cleaned, strict=getattr(self.trainer, "restore_strict", True)
+        )
+        if getattr(self.trainer, "restore_optimizer", True) and "optimizer" in state:
+            try:
+                self.trainer.optimizer.load_state_dict(state["optimizer"])
+            except (ValueError, RuntimeError):
+                pass
+        self.trainer.epoch = int(state.get("epoch", 0) or 0)
+        self.trainer.step = int(state.get("step", 0) or 0)

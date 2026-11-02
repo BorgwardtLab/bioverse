@@ -24,8 +24,6 @@ import numpy as np
 import pandas as pd
 import requests
 import yaml
-from joblib import Parallel, delayed
-from multiprocess import Pool
 from rich.console import Console
 from rich.progress import Progress
 from rich.traceback import install as install_traceback
@@ -34,6 +32,7 @@ from ..data import Batch
 from . import config
 from .array import flatten
 from .constants import ONE_TO_THREE, SHARD_SIZE
+from .mp_pool import WorkerPool, pack_blob, unpack_blob
 
 install_traceback(show_locals=False)
 
@@ -157,7 +156,7 @@ def rebatch(iterator: Iterator[Batch]) -> IteratorWithLength:
 def save_shards(iterator: Iterator[Batch], path: Path | str) -> None:
     path = Path(path)
     shard_num, scene_nums, toc = 0, [], []
-    for shard in progressbar(iterator, description="Transforming"):
+    for shard in progressbar(iterator, description="Saving"):
         shard_num += 1
         # shard_toc = {
         #     "shard": np.full(len(shard), shard_num),
@@ -176,7 +175,7 @@ def save_shards(iterator: Iterator[Batch], path: Path | str) -> None:
             shard.toc["graph"] = ak.num(graphs, axis=4)[:, :, :, 0]
         if "molecule_mutation_effect" in shard.data:
             mutations = shard.scenes.frames.molecules.molecule_mutation_effect
-            shard.toc["mutations"] = ak.num(mutations, axis=2).ravel()
+            shard.toc["mutations"] = ak.num(mutations, axis=-1).ravel()
         scene_nums.append(shard.toc.pop("scene"))
         toc.append(ak.Array(shard.toc))
         save(shard.data, path / f"{shard_num}.ak")
@@ -228,36 +227,35 @@ def parallelize(
     progress: bool = True,
     total: int | None = None,
     max_workers: int | None = None,
+    pack: Callable | None = pack_blob,
+    unpack: Callable | None = unpack_blob,
 ) -> Iterator[Any]:
     workers = min(max_workers, config.workers) if max_workers else config.workers
-    if workers == 1:
-        job = (fn(item) for item in data)
-    else:
-        # job = Parallel(n_jobs=workers, return_as="generator")(
-        #     delayed(fn)(item) for item in data
-        # )
-        def job():
-            with Pool(processes=workers) as pool:
-                for result in pool.imap(fn, data):
-                    yield result
-
-        job = job()
-    if progress:
-        progress_bar = Progress(transient=True)
-        if total is None:
-            if hasattr(data, "__len__"):
+    workers = 1 if workers is None or workers < 1 else int(workers)
+    job = (
+        (fn(item) for item in data)
+        if workers == 1
+        else WorkerPool(fn, data, workers, pack=pack, unpack=unpack)
+    )
+    try:
+        if progress:
+            progress_bar = Progress(transient=True)
+            if total is None and hasattr(data, "__len__"):
                 total = len(data)  # type: ignore
-        task = progress_bar.add_task(description=description, total=total)
-        t0 = time.time()
-        with progress_bar:
-            for item in job:
-                yield item
-                progress_bar.update(task, advance=1)
-        time_taken = time.strftime("%H:%M:%S", time.gmtime(time.time() - t0))
-        note(f"{description} {time_taken}")
-    else:
-        for item in job:
-            yield item
+            task = progress_bar.add_task(description=description, total=total)
+            t0 = time.time()
+            with progress_bar:
+                for item in job:
+                    yield item
+                    progress_bar.update(task, advance=1)
+            time_taken = time.strftime("%H:%M:%S", time.gmtime(time.time() - t0))
+            note(f"{description} {time_taken}")
+        else:
+            yield from job
+    finally:
+        close = getattr(job, "close", None)
+        if close is not None:
+            close()
 
 
 def zip_file(
@@ -311,10 +309,12 @@ def download(
     out_path: Path | str,
     chunk_size: int = 1024 * 1024,
     extension: str | None = None,
+    progress: bool = True,
 ) -> None:
     url_path, out_path = Path(url.split("?")[0]), Path(out_path)
     if out_path.exists():
-        note(f"{out_path.name} already downloaded.")
+        if progress:
+            note(f"{out_path.name} already downloaded.")
         return
     if not extension is None:
         out_path = out_path.with_suffix(extension)
@@ -324,21 +324,26 @@ def download(
     r = requests.get(url, stream=True, headers={"User-Agent": "XY"})
     r.raise_for_status()
     try:
-        with open(out_path, "wb") as file:
-            for data in progressbar(
-                r.iter_content(chunk_size=chunk_size),
+        chunks = r.iter_content(chunk_size=chunk_size)
+        if progress:
+            chunks = progressbar(
+                chunks,
                 description=f"Downloading {url_path.name}",
                 total=int(r.headers.get("content-length", 0)) // chunk_size,
-            ):
+            )
+        with open(out_path, "wb") as file:
+            for data in chunks:
                 file.write(data)
     except:
         os.remove(out_path)
         raise Exception(f"Could not download {url_path.name}.")
     if out_path.suffix in [".zip", ".gz", ".bz2", ".Z", ".xz"]:
-        note(f"Unzipping {out_path}")
+        if progress:
+            note(f"Unzipping {out_path}")
         out_path = unzip_file(out_path)
     if out_path.suffix == ".tar":
-        note(f"Extracting {out_path}")
+        if progress:
+            note(f"Extracting {out_path}")
         extract(out_path)
 
 

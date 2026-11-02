@@ -4,8 +4,47 @@ from typing import Tuple
 import awkward as ak
 import numpy as np
 
-from .data import Batch
+from .data import Batch, _as_row_choice
 from .utilities import SHARD_SIZE, config, load
+
+
+def first_unique_rows(keys):
+    """First-occurrence indices and an inverse map for row-wise keys.
+
+    ``keys`` is ``(N,)`` or ``(N, K)``. The inverse maps every original row
+    onto the unique-row index so live transforms can run once per structure.
+    """
+    keys = np.asarray(keys)
+    if keys.ndim == 1:
+        keys = keys.reshape(-1, 1)
+    seen = {}
+    uniq = []
+    inverse = np.empty(len(keys), dtype=np.int64)
+    for i, row in enumerate(map(tuple, keys.tolist())):
+        found = seen.get(row)
+        if found is None:
+            found = len(uniq)
+            seen[row] = found
+            uniq.append(i)
+        inverse[i] = found
+    return np.asarray(uniq, dtype=np.int64), inverse
+
+
+def _int_rows(value, n):
+    if isinstance(value, (int, np.integer)):
+        return np.full(n, int(value), dtype=np.int64)
+    choice = np.asarray(_as_row_choice(value), dtype=np.int64).reshape(-1)
+    if len(choice) == 1 and n != 1:
+        return np.full(n, int(choice[0]), dtype=np.int64)
+    return choice
+
+
+def _take_rows(component, rows):
+    if isinstance(component, (int, np.integer, slice)):
+        return component
+    if isinstance(component, ak.Array):
+        return component[rows]
+    return np.asarray(component)[rows]
 
 
 class LRUCache(OrderedDict):
@@ -100,6 +139,18 @@ class VirtualBatch:
             scene_index + self.offsets[np.searchsorted(self.shards, shard_index)]
         )
         index = (scene_index, *index[1:])
+        scenes = _int_rows(index[0], len(np.asarray(ak.to_numpy(ak.ravel(index[0])))))
+        n = len(scenes)
+        keys = [scenes]
+        if len(index) > 1:
+            keys.append(_int_rows(index[1], n))
+        if len(index) > 2:
+            keys.append(_int_rows(index[2], n))
+        uniq, inverse = first_unique_rows(np.stack(keys, axis=1))
+        if len(uniq) != n:
+            index = tuple(_take_rows(part, uniq) for part in index)
         vbatch = self.superbatch[index]  # type: ignore
         vbatch = self.live_transforms.transform_batch(vbatch)
+        if len(uniq) != n:
+            vbatch = vbatch[inverse]
         return vbatch

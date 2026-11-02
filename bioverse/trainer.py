@@ -1,7 +1,33 @@
 from pathlib import Path
 
 from bioverse import backends, collaters, loggers
-from bioverse.utilities import config, save
+from bioverse.utilities import config, info, save
+
+
+def finite_score(score):
+    """Return ``float(score)`` or ``None`` if the value is missing or NaN."""
+    if score is None:
+        return None
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        return None
+    if score != score:
+        return None
+    return score
+
+
+def score_improved(score, best, *, higher=True, min_delta=0.0):
+    """Whether ``score`` improves on ``best`` for the monitored metric."""
+    score = finite_score(score)
+    if score is None:
+        return False
+    if best is None:
+        return True
+    best = float(best)
+    if higher:
+        return score > best + min_delta
+    return score < best - min_delta
 
 
 class Trainer:
@@ -60,6 +86,12 @@ class Trainer:
         checkpoint_every=1.0,
         checkpoint_name="checkpoint",
         restore_from="checkpoint",
+        restore_strict=True,
+        restore_optimizer=True,
+        save_best=True,
+        checkpoint_metric=None,
+        patience=None,
+        min_delta=0.0,
         log_every=100,
         epochs=1,
         batch_size=32,
@@ -84,6 +116,14 @@ class Trainer:
         self.checkpoint_every = checkpoint_every
         self.checkpoint_name = checkpoint_name
         self.restore_from = restore_from
+        self.restore_strict = bool(restore_strict)
+        self.restore_optimizer = bool(restore_optimizer)
+        self.save_best = save_best
+        self.checkpoint_metric = checkpoint_metric
+        self.patience = None if patience is None or patience <= 0 else int(patience)
+        self.min_delta = float(min_delta)
+        self._best_score = None
+        self._epochs_without_improvement = 0
         self.log_every = log_every
         self.batch_size = batch_size
         self.batch_on = batch_on
@@ -129,7 +169,13 @@ class Trainer:
         else:
             self.run_eval(command)
 
+    def _maybe_restore(self):
+        path = self.root / self.restore_from
+        if path.with_suffix(".pt").exists():
+            self.backend.load_checkpoint(path)
+
     def run_train(self):
+        self._maybe_restore()
         if not self.val_partition_name is None and self.initial_validation:
             self.run_eval("val")
         for epoch in range(1, self.epochs + 1):
@@ -159,9 +205,26 @@ class Trainer:
                 ):
                     break
             if not self.val_partition_name is None:
-                self.run_eval("val")
+                result = self.run_eval("val")
+                improved = self._update_best(result)
+                if self.save_best and improved:
+                    self.backend.save_checkpoint(
+                        self.root / (self.checkpoint_name.format(epoch=epoch))
+                    )
+                if self.patience is not None:
+                    if improved:
+                        self._epochs_without_improvement = 0
+                    else:
+                        self._epochs_without_improvement += 1
+                        if self._epochs_without_improvement >= self.patience:
+                            info(
+                                f"Early stopping at epoch {epoch} "
+                                f"({self.patience} epochs without improvement)."
+                            )
+                            break
             if (
-                isinstance(self.checkpoint_every, int)
+                (not self.save_best or self.val_partition_name is None)
+                and isinstance(self.checkpoint_every, int)
                 and epoch % self.checkpoint_every == 0
             ):
                 self.backend.save_checkpoint(
@@ -199,6 +262,26 @@ class Trainer:
         result.to_console()
         self.logger.log_dict(result.to_dict()[self.model_name], mode=command)
         save(result.to_dict()[self.model_name], self.root / f"{command}_results.yaml")
+        return result
+
+    def _monitor_score(self, result):
+        scores = result.to_dict().get(self.model_name) or {}
+        if not scores:
+            return None, None, True
+        metric = self.checkpoint_metric
+        if metric is None or metric not in scores:
+            metric = next(iter(scores))
+        direction = result.better.get(metric, "higher")
+        return metric, finite_score(scores.get(metric)), direction == "higher"
+
+    def _update_best(self, result):
+        _, score, higher = self._monitor_score(result)
+        improved = score_improved(
+            score, self._best_score, higher=higher, min_delta=self.min_delta
+        )
+        if improved:
+            self._best_score = score
+        return improved
 
     def run_pre(self):
         loader = self.benchmark.loader(

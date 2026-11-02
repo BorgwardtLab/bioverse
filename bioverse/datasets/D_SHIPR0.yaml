@@ -1,0 +1,20 @@
+description: Synthetic ship-motif detection with scrambled negatives. Train and val
+  stay upright; the test split is randomly rotated (tests rotation equivariance;
+  rigid KPConv expected to fail).
+citation: Synthetic Bioverse benchmark for equivariant geometric pattern matching on
+  point-cloud graphs (Picasso ship motif).
+adapter:
+  PicassoShipAdapter:
+    n_samples_per_class: 2000
+    negative_type: scramble
+    n_noise: 20
+    noise_radius: 3.0
+    knn_k: 3
+    min_node_distance: 0.5
+    min_rotation_deg: 30
+    max_rotation_deg: 330
+    rotate: true
+    seed: 42
+transforms:
+- OneHotAtomFeatures:
+    alphabet: [M, N]

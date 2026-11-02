@@ -1,0 +1,21 @@
+description: Synthetic ship-motif detection with 45-degree left mast-tilt negatives
+  and background noise (tests part-wise rigidity; standard GNN expected to fail).
+citation: Synthetic Bioverse benchmark for equivariant geometric pattern matching on
+  point-cloud graphs (Picasso ship motif).
+adapter:
+  PicassoShipAdapter:
+    n_samples_per_class: 2000
+    negative_type: tilt
+    n_noise: 20
+    noise_radius: 3.0
+    knn_k: 3
+    min_node_distance: 0.5
+    rotate: false
+    seed: 42
+transforms:
+- OneHotAtomFeatures:
+    alphabet: [M, N]
+- SceneSplit:
+    train_size: 0.8
+    val_size: 0.1
+    test_size: 0.1

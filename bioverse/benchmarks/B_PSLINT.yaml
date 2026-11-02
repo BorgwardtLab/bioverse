@@ -11,8 +11,8 @@ task:
     resolution: residue
 metric:
 - AurocMetric:
-    'on': 2
+    on_axis: 2
     per: 1
 - AuprcMetric:
-    'on': 2
+    on_axis: 2
     per: 1

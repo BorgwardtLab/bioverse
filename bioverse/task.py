@@ -15,6 +15,10 @@ class Task(ABC):
     shard through a :class:`~bioverse.virtual.VirtualBatch`, selects features
     ``X`` and supervision ``y``, and returns both as Awkward Arrays.
 
+    To change tokens before the asset feature lookup, set ``vbatch.pre_live``
+    to a ``batch -> batch`` callable before indexing. Featurization then runs
+    once on the indexed batch instead of the cached superbatch.
+
     Subclasses implement :meth:`__call__`. The trainer passes the output to a
     :class:`~bioverse.collater.Collater` and the metric compares ``y`` with
     model predictions.

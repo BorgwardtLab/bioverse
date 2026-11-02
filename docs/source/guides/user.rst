@@ -178,7 +178,13 @@ Common ``trainer`` fields:
      - Output directory for checkpoints and metrics
    * - ``epochs``
      - ``1``
-     - Training epochs
+     - Maximum training epochs
+   * - ``save_best``
+     - ``True``
+     - Overwrite ``checkpoint`` when the monitored val metric improves
+   * - ``patience``
+     - ``None``
+     - Stop after this many val epochs without improvement (disabled if unset)
    * - ``batch_size``
      - ``32``
      - Batch size

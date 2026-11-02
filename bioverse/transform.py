@@ -6,7 +6,7 @@ import awkward as ak
 import numpy as np
 
 from .data import Assets, Batch, Split
-from .utilities import IteratorWithLength, note, parallelize, rebatch
+from .utilities import IteratorWithLength, note, parallelize, progressbar, rebatch
 
 
 class Transform:
@@ -55,27 +55,32 @@ class Transform:
     def filter_scenes(
         self, batches: Iterator[Batch], split: Split, assets: Assets
     ) -> Tuple[Iterator[Batch], Split, Assets]:
-        masks = [batch.scene_filter for batch in batches.copy()]
+        n_removed = 0
+        n_total = 0
+        masks: list[ak.Array] = []
+        filtered_split = split
 
-        def generator():
-            for batch, mask in zip(batches, masks):
-                batch.data.pop("scene_filter")
-                yield batch[mask]
+        def generate_filtered():
+            nonlocal n_removed, n_total, filtered_split
+            for batch in progressbar(
+                batches,
+                description="Filtering scenes",
+                total=len(batches) if hasattr(batches, "__len__") else None,
+            ):
+                mask = batch.scene_filter
+                masks.append(mask)
+                n_total += len(mask)
+                n_removed += int(ak.sum(~mask))
+                batch.data.pop("scene_filter", None)
+                yield batch.filter_scenes(mask)
 
-        batches = rebatch(generator())
-        mask = ak.concatenate(masks, axis=0)
-        if not len(split) == 0:
-            removed = split[~mask]
-            split = split[mask]
-            unique, counts = np.unique(removed.ravel(), return_counts=True)
-            names = [split.attrs["names"][i] for i in unique]
-            out_str = ", ".join(
-                f"{name}: {count}" for name, count in zip(names, counts)
-            )
-            note(f"Filtered {ak.sum(~mask)} of {len(mask)} scenes ({out_str}).")
-        else:
-            note(f"Filtered {ak.sum(~mask)} of {len(mask)} scenes.")
-        return batches, split, assets
+            if split.data and masks and n_removed > 0:
+                mask_np = ak.to_numpy(ak.concatenate(masks, axis=0))
+                filtered_split = split.mask_filter(mask_np)
+            _note_scene_filter(n_removed, n_total, split, masks)
+
+        batches = rebatch(generate_filtered())
+        return batches, filtered_split, assets
 
     def fit(self, batches: Iterator[Batch], split: Split, assets: Assets) -> None:
         pass
@@ -126,6 +131,36 @@ class Transform:
         return h.hexdigest()
 
 
+def _note_scene_filter(
+    n_removed: int,
+    n_total: int,
+    split: Split,
+    masks: list[ak.Array],
+) -> None:
+    n_kept = n_total - n_removed
+    if n_removed == 0:
+        note(f"Scene filter: kept all {n_total} scenes.")
+        return
+
+    msg = (
+        f"Scene filter: removed {n_removed} of {n_total} scenes "
+        f"({n_kept} kept)."
+    )
+    if split.data and masks:
+        mask = ak.concatenate(masks, axis=0)
+        mask_np = ak.to_numpy(mask)
+        removed = split.mask_filter(~mask_np)
+        split_key = split.default
+        removed_labels = removed.data[split_key]
+        unique, counts = np.unique(removed_labels, return_counts=True)
+        partition_names = split.names[split_key]
+        breakdown = ", ".join(
+            f"{partition_names[i]}: {count}" for i, count in zip(unique, counts)
+        )
+        msg = f"{msg} Removed by partition: {breakdown}."
+    note(msg)
+
+
 class Compose(Transform):
     """Apply a sequence of transforms in order.
 
@@ -161,7 +196,23 @@ class Compose(Transform):
             batch = transform.transform_batch(batch)
         return batch
 
+    def transform_assets(self, assets: Assets) -> Assets:
+        for transform in self.transforms:
+            assets = transform.transform_assets(assets)
+        return assets
+
     def inverse_transform(self, y: ak.Array) -> ak.Array:
         for transform in self.transforms:
             y = transform.inverse_transform(y)
         return y
+
+
+def flatten_transforms(*transforms: Transform) -> tuple[Transform, ...]:
+    """Unwrap nested :class:`Compose` so apply/live hash the inner pipeline."""
+    flat: list[Transform] = []
+    for transform in transforms:
+        if isinstance(transform, Compose):
+            flat.extend(flatten_transforms(*transform.transforms))
+        else:
+            flat.append(transform)
+    return tuple(flat)

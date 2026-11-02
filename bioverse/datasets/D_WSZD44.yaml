@@ -1,0 +1,6 @@
+description: D44.1 anti-lysozyme Fv deep mutational scan of antigen binding, with a
+  Boltz-2 predicted VH–VL–lysozyme complex structure.
+citation: Warszawski, Borenstein Katz et al. "Optimizing antibody affinity and stability
+  by the automated design of the variable light-heavy chain interfaces." PLoS Computational
+  Biology 15, e1007207 (2019). https://doi.org/10.1371/journal.pcbi.1007207
+adapter: WarszawskiD44Adapter

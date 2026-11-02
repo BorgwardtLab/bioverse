@@ -17,12 +17,13 @@ class ResidueSampler(Sampler):
     def index(self, toc, mask):
         # reformat the toc to long format
         residues = toc[mask]["residue"]
+        # molecule-level counts: sum chain (and deeper) axes when present
+        while residues.ndim > 3:
+            residues = ak.sum(residues, axis=-1)
         index = ak.zip([ak.local_index(residues, i) for i in range(residues.ndim)])
-        index = flatten(index, exclude=4)
-        scenes, frames, molecules, chains = ak.unzip(index)
+        index = flatten(index, exclude=3)
+        scenes, frames, molecules = ak.unzip(index)
         scenes = toc[mask]["scene"][scenes]  # remap to toc index
-        # compute number of samples
-        residues = ak.sum(residues, axis=-1)  # sum over chains
         residues = ak.flatten(residues, axis=None)
         if isinstance(self.num_residues, int):
             num_residues = ak.full_like(residues, self.num_residues)

@@ -93,6 +93,9 @@ class Sampler(ABC):
             sizes = toc["molecule"][index["scene"]][index["frame"]]
         elif batch_on == "residues":
             sizes = toc["residue"][index["scene"]][index["frame"]][index["molecule"]]
+            # Residue TOC is often per-chain; pack by molecule totals.
+            while getattr(sizes, "ndim", 1) > 1:
+                sizes = ak.sum(sizes, axis=-1)
         elif batch_on == "edges":
             sizes = toc["graph"][index["scene"]][index["frame"]][index["molecule"]]
         # compute batch list sizes for each rank

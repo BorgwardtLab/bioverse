@@ -1,0 +1,13 @@
+description: WT-centered mutational effect prediction on ProteinGym Activity,
+  Binding, and Stability assays with Huber TEV/NIa homologs held out.
+citation: 'Notin et al. "ProteinGym: Large-Scale Benchmarks for Protein Fitness Prediction
+  and Design." NeurIPS Datasets and Benchmarks Track (2023).'
+dataset: D_PROGMS
+sampler:
+  MutationSampler:
+    group_scenes: true
+task:
+  MutationEffectPredictionTask:
+    resolution: residue
+    mutate_structure: false
+metric: SpearmansRhoMetric

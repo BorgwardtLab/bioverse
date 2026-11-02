@@ -2,10 +2,31 @@ from pathlib import Path
 
 import awkward as ak
 import numpy as np
-from biopandas.mmcif import PandasMmcif
+import pandas as pd
+from biopandas.mmcif.engines import mmcif_col_types
+from biopandas.mmcif.pandas_mmcif import load_cif_data
 
 from ..processor import Processor
 from ..utilities import THREE_TO_ONE
+
+
+def _read_atom_df(path: Path) -> tuple[pd.DataFrame, str]:
+    """Load ATOM rows from mmCIF, including Boltz files that omit auth_* columns."""
+    if "".join(path.suffixes).lower().endswith(".gz"):
+        import gzip
+
+        with gzip.open(path, "rt") as handle:
+            text = handle.read()
+    else:
+        text = path.read_text()
+    data = load_cif_data(text)
+    block = data[next(iter(data))]
+    full = pd.DataFrame.from_dict(block["atom_site"], orient="index").transpose()
+    if "auth_atom_id" not in full.columns and "label_atom_id" in full.columns:
+        full["auth_atom_id"] = full["label_atom_id"]
+    present = {col: dtype for col, dtype in mmcif_col_types.items() if col in full}
+    full = full.astype(present, errors="ignore")
+    return pd.DataFrame(full[full.group_PDB == "ATOM"]), text
 
 
 class CifProcessor(Processor):
@@ -18,17 +39,29 @@ class CifProcessor(Processor):
 
         # read cif file and metadata
         path = Path(path)
-        mmcif = PandasMmcif().read_mmcif(str(path))
-        df = mmcif.df["ATOM"]
-        is_alphafold = "AlphaFold" in mmcif.pdb_text
+        df, pdb_text = _read_atom_df(path)
+        is_alphafold = "AlphaFold" in pdb_text
         name = path.name.split(".")[0]
 
         # extract atom data to dict
-        residue_sizes = ak.Array(df["label_seq_id"]).run_lengths()
+        seq = pd.to_numeric(df["label_seq_id"], errors="coerce")
+        if "auth_seq_id" in df.columns:
+            seq = seq.where(seq.notna(), pd.to_numeric(df["auth_seq_id"], errors="coerce"))
+        if seq.isna().any():
+            filled = seq.copy()
+            for _, index in df.groupby(df["label_asym_id"], sort=False).groups.items():
+                vals = seq.loc[index]
+                if vals.isna().all():
+                    filled.loc[index] = np.arange(1, len(index) + 1)
+                else:
+                    filled.loc[index] = vals.ffill().bfill()
+            seq = filled
+        seq = seq.fillna(0).astype(int)
+        residue_sizes = ak.Array(seq.to_numpy()).run_lengths()
         chain_sizes = ak.Array(df["label_asym_id"]).run_lengths()
         data = {
             "chain_label": df["label_asym_id"],
-            "residue_number": np.array(df["label_seq_id"]).astype(int),
+            "residue_number": np.asarray(seq, dtype=int),
             "residue_label": df["label_comp_id"],
             "atom_label": df["label_atom_id"],
             "atom_pos": np.stack(

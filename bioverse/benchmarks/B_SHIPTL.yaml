@@ -1,0 +1,15 @@
+description: Ship-motif presence classification with 45-degree left mast-tilt negatives and noise.
+citation: Synthetic Bioverse benchmark for equivariant geometric pattern matching on
+  point-cloud graphs (Picasso ship motif).
+dataset: D_SHIPTL
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: present
+    level: molecule
+    resolution: atom
+metric:
+- BinaryAccuracyMetric:
+    threshold: 0.0
+- BalancedBinaryAccuracyMetric:
+    threshold: 0.0

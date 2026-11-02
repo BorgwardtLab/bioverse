@@ -8,5 +8,5 @@ task:
     meta: lddt
     level: molecule
 metric:
-- MeanAbsoluteErrorMetric
 - SpearmansRhoMetric
+- MeanAbsoluteErrorMetric

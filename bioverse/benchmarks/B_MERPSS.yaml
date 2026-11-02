@@ -1,0 +1,16 @@
+description: MEROPS combinatorial positional specificity profiles as an independent
+  protease–substrate ranking benchmark (allowed vs disallowed single-site variants).
+citation: Rawlings and Bateman. "How to use the MEROPS database and website to help
+  understand peptidase specificity." Protein Science 30, 83–92 (2021).
+  https://doi.org/10.1002/pro.3948
+dataset: D_MERPSS
+sampler: MutationSampler
+task:
+  ProteaseSubstrateCompatibilityTask:
+    resolution: residue
+metric:
+  - SpearmansRhoMetric
+  - PairwiseRankingAccuracyMetric
+  - TopKEnrichmentMetric:
+      k: 20
+split: random_scene_split

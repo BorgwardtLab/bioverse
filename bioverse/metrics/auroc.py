@@ -1,7 +1,12 @@
 import awkward as ak
+import numpy as np
 
 from ..metric import Metric
 from ..utilities.array import cumsum, diff
+
+
+def _as_numpy(array):
+    return np.asarray(ak.to_list(array), dtype=float).reshape(-1)
 
 
 class AurocMetric(Metric):
@@ -9,26 +14,25 @@ class AurocMetric(Metric):
 
     better = "higher"
 
-    def __init__(self, name="AUROC", **kwargs):
-        super().__init__(name=name, **kwargs)
+    def __init__(self, name="AUROC", reduction="nanmean", **kwargs):
+        super().__init__(name=name, reduction=reduction, **kwargs)
 
     def compute(self, y_true, y_pred):
         y_true = ak.values_astype(y_true, int)
-        # Sort by predicted values
         order = ak.argsort(y_pred, axis=-1, ascending=False)
         y_true_sorted = y_true[order]
-
-        # Calculate true positives, false positives, and true negatives
+        n_pos = ak.sum(y_true_sorted, axis=-1)
+        n_neg = ak.sum(1 - y_true_sorted, axis=-1)
         tp = cumsum(y_true_sorted)
         fp = cumsum(1 - y_true_sorted)
         tn = ak.sum(1 - y_true_sorted, axis=-1, keepdims=True) - fp
-
-        # Calculate false positive rate and true positive rate
-        fpr = fp / (fp + tn)
-        tpr = tp / ak.sum(y_true_sorted, axis=-1, keepdims=True)
-
-        # Calculate AUROC using the trapezoidal rule
-        delta_fpr = diff(fpr)
-        tpr_mid = (tpr[..., :-1] + tpr[..., 1:]) / 2
-        auroc = ak.sum(delta_fpr * tpr_mid, axis=-1)
-        return auroc
+        with np.errstate(divide="ignore", invalid="ignore"):
+            fpr = fp / (fp + tn)
+            tpr = tp / ak.sum(y_true_sorted, axis=-1, keepdims=True)
+            delta_fpr = diff(fpr)
+            tpr_mid = (tpr[..., :-1] + tpr[..., 1:]) / 2
+            auroc = ak.sum(delta_fpr * tpr_mid, axis=-1)
+        auroc = _as_numpy(auroc)
+        valid = (_as_numpy(n_pos) > 0) & (_as_numpy(n_neg) > 0)
+        auroc = np.where(valid, auroc, np.nan)
+        return auroc if auroc.size > 1 else float(auroc[0])

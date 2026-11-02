@@ -1,0 +1,13 @@
+description: Zero-shot MMP-2 / MMP-9 substrate ranking on Cieplak et al. quantitative
+  kcat/KM measurements.
+citation: Ratnikov, Cieplak, Remacle, Nguyen, and Smith. "Quantitative profiling of
+  protease specificity." PLOS Computational Biology 17, e1008101 (2021).
+  https://doi.org/10.1371/journal.pcbi.1008101
+dataset: D_CIEPLK
+sampler: MutationSampler
+task:
+  ProteaseSubstrateCompatibilityTask:
+    resolution: residue
+metric:
+  - SpearmansRhoMetric
+split: cieplak_scene_split

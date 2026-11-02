@@ -1,0 +1,13 @@
+description: MEROPS experimentally observed protease cleavage sites as P6–P4′ windows
+  paired with PDB or AlphaFold protease structures. Windows of each protease are
+  split independently; Huber TEV (C04.004) and Cieplak MMP-2/MMP-9 (M10.003,
+  M10.004) identifiers are held out.
+citation: Rawlings, Barrett, Thomas, Huang, Bateman, and Finn. "The MEROPS database
+  of proteolytic enzymes, their substrates and inhibitors in 2017 and a comparison
+  with peptidases in the PANTHER database." Nucleic Acids Research 46, D624–D632 (2018).
+  https://doi.org/10.1093/nar/gkx1134
+adapter:
+  MeropsAdapter:
+    source: cleavage
+    max_length: 400
+    max_windows: 64

@@ -24,6 +24,8 @@ from bioverse.metrics import (
     RecoveryMetric,
     SpearmansRhoMetric,
     TopKAccuracyMetric,
+    PairwiseRankingAccuracyMetric,
+    TopKEnrichmentMetric,
 )
 
 
@@ -68,7 +70,7 @@ def regression_data():
 
 def test_binary_accuracy(binary_data):
     y_true, y_pred = binary_data
-    metric = BinaryAccuracyMetric(on=2, per=1, reduction="mean")
+    metric = BinaryAccuracyMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_acc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_accs = []
@@ -80,7 +82,7 @@ def test_binary_accuracy(binary_data):
 
 def test_multi_class_accuracy(multiclass_data):
     y_true, y_pred = multiclass_data
-    metric = MultiClassAccuracyMetric(on=2, per=1, reduction="mean")
+    metric = MultiClassAccuracyMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_acc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_accs = []
@@ -93,7 +95,7 @@ def test_multi_class_accuracy(multiclass_data):
 
 def test_balanced_binary_accuracy(binary_data):
     y_true, y_pred = binary_data
-    metric = BalancedBinaryAccuracyMetric(on=2, per=1, reduction="mean")
+    metric = BalancedBinaryAccuracyMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_acc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_accs = []
@@ -105,7 +107,7 @@ def test_balanced_binary_accuracy(binary_data):
 
 def test_precision(binary_data):
     y_true, y_pred = binary_data
-    metric = PrecisionMetric(on=2, per=1, reduction="mean")
+    metric = PrecisionMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_prec = list(metric.result().to_dict()["Ours"].values())[0]
     sk_precs = []
@@ -117,7 +119,7 @@ def test_precision(binary_data):
 
 def test_recall(binary_data):
     y_true, y_pred = binary_data
-    metric = RecallMetric(on=2, per=1, reduction="mean")
+    metric = RecallMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_rec = list(metric.result().to_dict()["Ours"].values())[0]
     sk_recs = []
@@ -129,7 +131,7 @@ def test_recall(binary_data):
 
 def test_f1_score(binary_data):
     y_true, y_pred = binary_data
-    metric = F1ScoreMetric(on=2, per=1, reduction="mean")
+    metric = F1ScoreMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_f1 = list(metric.result().to_dict()["Ours"].values())[0]
     sk_f1s = []
@@ -141,7 +143,7 @@ def test_f1_score(binary_data):
 
 def test_auroc(binary_data):
     y_true, y_pred = binary_data
-    metric = AurocMetric(on=2, per=1, reduction="mean")
+    metric = AurocMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_auroc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_aurocs = []
@@ -153,7 +155,7 @@ def test_auroc(binary_data):
 
 def test_auprc(binary_data):
     y_true, y_pred = binary_data
-    metric = AuprcMetric(on=2, per=1, reduction="mean")
+    metric = AuprcMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_auprc = list(metric.result().to_dict()["Ours"].values())[0]
     sk_auprcs = []
@@ -163,9 +165,37 @@ def test_auprc(binary_data):
     np.testing.assert_allclose(bio_auprc, sk_auprc, rtol=1e-5)
 
 
+def test_auroc_all_negative_is_nan():
+    y_true = ak.Array({"label": [[0, 0, 0]]})
+    y_pred = ak.Array({"label": [[0.2, 0.9, 0.1]]})
+    metric = AurocMetric(on_axis=2, per=1)
+    metric.update(y_true, y_pred)
+    value = list(metric.result().to_dict()["Ours"].values())[0]
+    assert np.isnan(value)
+
+
+def test_auroc_nanmean_skips_degenerate_groups():
+    y_true = ak.Array({"label": [[0, 0, 0], [0, 1, 1]]})
+    y_pred = ak.Array({"label": [[0.1, 0.8, 0.2], [0.1, 0.8, 0.9]]})
+    metric = AurocMetric(on_axis=2, per=1)
+    metric.update(y_true, y_pred)
+    bio = list(metric.result().to_dict()["Ours"].values())[0]
+    expected = sk_metrics.roc_auc_score([0, 1, 1], [0.1, 0.8, 0.9])
+    np.testing.assert_allclose(bio, expected, rtol=1e-5)
+
+
+def test_auprc_all_negative_is_nan():
+    y_true = ak.Array({"label": [[0, 0, 0]]})
+    y_pred = ak.Array({"label": [[0.2, 0.9, 0.1]]})
+    metric = AuprcMetric(on_axis=2, per=1)
+    metric.update(y_true, y_pred)
+    value = list(metric.result().to_dict()["Ours"].values())[0]
+    assert np.isnan(value)
+
+
 def test_mae(regression_data):
     y_true, y_pred = regression_data
-    metric = MeanAbsoluteErrorMetric(on=2, per=1, reduction="mean")
+    metric = MeanAbsoluteErrorMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_mae = list(metric.result().to_dict()["Ours"].values())[0]
     sk_maes = []
@@ -177,7 +207,7 @@ def test_mae(regression_data):
 
 def test_mse(regression_data):
     y_true, y_pred = regression_data
-    metric = MeanSquaredErrorMetric(on=2, per=1, reduction="mean")
+    metric = MeanSquaredErrorMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_mse = list(metric.result().to_dict()["Ours"].values())[0]
     sk_mses = []
@@ -189,7 +219,7 @@ def test_mse(regression_data):
 
 def test_r2(regression_data):
     y_true, y_pred = regression_data
-    metric = CoefficientOfDeterminationMetric(on=2, per=1, reduction="mean")
+    metric = CoefficientOfDeterminationMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_r2 = list(metric.result().to_dict()["Ours"].values())[0]
     sk_r2s = []
@@ -201,7 +231,7 @@ def test_r2(regression_data):
 
 def test_pearsons_r(regression_data):
     y_true, y_pred = regression_data
-    metric = PearsonsRMetric(on=2, per=1, reduction="mean")
+    metric = PearsonsRMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_pearson = list(metric.result().to_dict()["Ours"].values())[0]
     assert bio_pearson >= -1 and bio_pearson <= 1
@@ -209,16 +239,35 @@ def test_pearsons_r(regression_data):
 
 def test_spearmans_rho(regression_data):
     y_true, y_pred = regression_data
-    metric = SpearmansRhoMetric(on=2, per=1, reduction="mean")
+    metric = SpearmansRhoMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_spearman = list(metric.result().to_dict()["Ours"].values())[0]
     assert bio_spearman >= -1 and bio_spearman <= 1
 
 
+def test_spearmans_rho_average_ranks_for_ties():
+    metric = SpearmansRhoMetric()
+    y_true = ak.Array({"target": [1.0, 2.0, 3.0, 4.0]})
+    # Two pairs of ties: mid-ranks are 1.5, 1.5, 3.5, 3.5 vs 1, 2, 3, 4.
+    y_pred = ak.Array({"target": [0.0, 0.0, 1.0, 1.0]})
+    metric.update(y_true, y_pred)
+    rho = list(metric.result().to_dict()["Ours"].values())[0]
+    assert rho == pytest.approx(0.89442719, rel=1e-6)
+
+
+def test_spearmans_rho_constant_prediction_is_undefined():
+    metric = SpearmansRhoMetric()
+    y_true = ak.Array({"target": [0.2, 0.1, 0.0, 0.0]})
+    y_pred = ak.Array({"target": [0.0, 0.0, 0.0, 0.0]})
+    metric.update(y_true, y_pred)
+    rho = list(metric.result().to_dict()["Ours"].values())[0]
+    assert rho != rho
+
+
 def test_topk_accuracy(multiclass_data):
     y_true, y_pred = multiclass_data
     k = 2
-    metric = TopKAccuracyMetric(k=k, on=2, per=1, reduction="mean")
+    metric = TopKAccuracyMetric(k=k, on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_topk = list(metric.result().to_dict()["Ours"].values())[0]
     sk_topks = []
@@ -230,7 +279,7 @@ def test_topk_accuracy(multiclass_data):
 
 def test_perplexity(multiclass_data):
     y_true, y_pred = multiclass_data
-    metric = PerplexityMetric(on=2, per=1, reduction="mean")
+    metric = PerplexityMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     ppl = list(metric.result().to_dict()["Ours"].values())[0]
     assert ppl > 0
@@ -238,7 +287,7 @@ def test_perplexity(multiclass_data):
 
 def test_recovery(multiclass_data):
     y_true, y_pred = multiclass_data
-    metric = RecoveryMetric(on=2, per=1, reduction="mean")
+    metric = RecoveryMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     recovery = list(metric.result().to_dict()["Ours"].values())[0]
     assert recovery >= 0 and recovery <= 1
@@ -248,7 +297,7 @@ def test_blosum_score(multiclass_data):
     from bioverse.utilities import BLOSUM62
 
     y_true, y_pred = multiclass_data
-    metric = BlosumScoreMetric(on=2, per=1, reduction="mean")
+    metric = BlosumScoreMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     bio_score = list(metric.result().to_dict()["Ours"].values())[0]
 
@@ -259,9 +308,25 @@ def test_blosum_score(multiclass_data):
     np.testing.assert_allclose(bio_score, np.mean(expected_scores), rtol=1e-5)
 
 
+def test_recovery_nanmean_skips_empty_groups():
+    y_true = ak.Array({"label": [[0, 1, 1], []]})
+    y_pred = ak.Array(
+        {
+            "label": [
+                [[0.9, 0.1], [0.1, 0.9], [0.2, 0.8]],
+                [],
+            ]
+        }
+    )
+    metric = RecoveryMetric(on_axis=2, per=1, reduction="nanmean")
+    metric.update(y_true, y_pred)
+    recovery = list(metric.result().to_dict()["Ours"].values())[0]
+    assert recovery == pytest.approx(1.0)
+
+
 def test_balanced_multiclass_accuracy(multiclass_data):
     y_true, y_pred = multiclass_data
-    metric = BalancedMultiClassAccuracyMetric(on=2, per=1, reduction="mean")
+    metric = BalancedMultiClassAccuracyMetric(on_axis=2, per=1, reduction="mean")
     metric.update(y_true, y_pred)
     balanced_accuracy = list(metric.result().to_dict()["Ours"].values())[0]
     sk_balanced_accuracies = []
@@ -277,7 +342,7 @@ def test_multilabel_accuracy(multilabel_data):
     y_true, y_pred = multilabel_data
     threshold = 0.5
     metric = MultiLabelAccuracyMetric(
-        on=2, per=1, reduction="mean", threshold=threshold
+        on_axis=2, per=1, reduction="mean", threshold=threshold
     )
     metric.update(y_true, y_pred)
     multilabel_accuracy = list(metric.result().to_dict()["Ours"].values())[0]
@@ -295,3 +360,53 @@ def test_mean_angular_error():
     metric.update(y_true, y_pred)
     angular_mae = list(metric.result().to_dict()["Ours"].values())[0]
     np.testing.assert_allclose(angular_mae, 45.0, rtol=1e-5)
+
+
+def test_pairwise_ranking_accuracy():
+    metric = PairwiseRankingAccuracyMetric()
+    y_true = ak.Array({"target": [1.0, 2.0, 3.0]})
+    y_pred = ak.Array({"target": [0.1, 0.2, 0.9]})
+    metric.update(y_true, y_pred)
+    acc = list(metric.result().to_dict()["Ours"].values())[0]
+    assert acc == pytest.approx(1.0)
+
+
+def test_pairwise_ranking_accuracy_inverted():
+    metric = PairwiseRankingAccuracyMetric()
+    y_true = ak.Array({"target": [1.0, 2.0, 3.0]})
+    y_pred = ak.Array({"target": [0.9, 0.2, 0.1]})
+    metric.update(y_true, y_pred)
+    acc = list(metric.result().to_dict()["Ours"].values())[0]
+    assert acc == pytest.approx(0.0)
+
+
+def test_pairwise_ranking_accuracy_matches_dense_pairs():
+    from bioverse.metrics.pairwise_ranking_accuracy import pairwise_ranking_accuracy
+
+    rng = np.random.default_rng(0)
+    true = rng.normal(size=80)
+    pred = true + 0.3 * rng.normal(size=80)
+    true[::7] = true[1::7]
+    delta_true = true[:, None] - true[None, :]
+    delta_pred = pred[:, None] - pred[None, :]
+    mask = np.triu(delta_true != 0.0, k=1)
+    expected = float(
+        ((np.sign(delta_true) == np.sign(delta_pred)) & mask).sum() / mask.sum()
+    )
+    assert pairwise_ranking_accuracy(true, pred) == pytest.approx(expected)
+
+
+def test_pairwise_ranking_accuracy_constant_predictions_are_zero():
+    from bioverse.metrics.pairwise_ranking_accuracy import pairwise_ranking_accuracy
+
+    assert pairwise_ranking_accuracy([1.0, 2.0, 3.0], [0.5, 0.5, 0.5]) == 0.0
+
+
+def test_top_k_enrichment_perfect():
+    metric = TopKEnrichmentMetric(k=2, threshold=0.5)
+    y_true = ak.Array({"target": [0.0, 0.0, 1.0, 1.0]})
+    y_pred = ak.Array({"target": [0.1, 0.2, 0.8, 0.9]})
+    metric.update(y_true, y_pred)
+    value = list(metric.result().to_dict()["Ours"].values())[0]
+    assert value == pytest.approx(2.0)
+

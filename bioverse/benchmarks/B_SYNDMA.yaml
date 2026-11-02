@@ -1,0 +1,19 @@
+description: Supervised Δactivity prediction on synthetic protease DMS (mutation-only
+  labels). Validation splits mutations of the same proteases; Huber is not used.
+citation: Composed from MEROPS, BioLiP, and ProteinGym priors.
+dataset: D_SYNDMA
+sampler:
+  MutationSampler:
+    group_scenes: true
+task:
+  ProteaseMutationDeltaTask:
+    resolution: residue
+metric:
+  - SpearmansRhoMetric
+  - PearsonsRMetric
+  - PairwiseRankingAccuracyMetric
+  - TopKEnrichmentMetric:
+      k: 10
+  - TopKEnrichmentMetric:
+      k: 30
+split: random_mutation_split

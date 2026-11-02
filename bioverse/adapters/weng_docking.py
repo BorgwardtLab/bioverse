@@ -1,6 +1,9 @@
+import csv
+import math
 import tarfile
 import xml.etree.ElementTree as ET
 import zipfile
+from collections import defaultdict
 from pathlib import Path
 
 import awkward as ak
@@ -14,6 +17,14 @@ from ..processors import PdbProcessor
 from ..utilities import IteratorWithLength, batched, config, download
 
 BASE_URL = "https://zlab.wenglab.org/benchmark"
+# Affinity Benchmark 2 table (Kastritis 2011 + Vreven 2015). Official host is gone;
+# pin the 179-complex dump used by GET / THUNLP-MT.
+AFFINITY_URL = (
+    "https://raw.githubusercontent.com/THUNLP-MT/GET/"
+    "63ea6a0e51570173ee6fc28d27d74ed84b3a3bc2/datasets/PPA/PPAB_V2.csv"
+)
+R_KCAL = 1.98720425864083e-3  # kcal / (mol K)
+T_REF = 298.15  # K; ΔG = RT ln(Kd)
 STRUCTURE_PARTS = ("r_b", "l_b", "r_u", "l_u")
 MOLECULE_FIELDS = (
     "residue_number",
@@ -30,6 +41,9 @@ METADATA_FIELDS = (
     "dasa",
     "pdb1",
     "pdb2",
+    "kd",
+    "pkd",
+    "dg",
 )
 
 
@@ -84,6 +98,63 @@ def parse_benchmark_table(path: Path) -> list[dict]:
             }
         )
     return cases
+
+
+def _norm_complex_id(value: str) -> str:
+    value = value.strip()
+    if value.endswith("*"):
+        value = value[:-1].strip()
+    return value
+
+
+def parse_kd(value: str):
+    value = value.strip().replace(" ", "")
+    if not value or value[0] in "<>":
+        return None
+    try:
+        kd = float(value)
+    except ValueError:
+        return None
+    if not math.isfinite(kd) or kd <= 0:
+        return None
+    return kd
+
+
+def parse_affinity_table(path: Path) -> dict[str, dict]:
+    """Map normalized complex IDs to Kd, pKd, and ΔG (kcal/mol at 298.15 K)."""
+    table = {}
+    with open(path, newline="") as handle:
+        reader = csv.reader(handle)
+        header = [cell.strip() for cell in next(reader)]
+        id_idx = header.index("Complex PDB")
+        kd_idx = next(i for i, name in enumerate(header) if name.startswith("Kd"))
+        for row in reader:
+            if len(row) <= max(id_idx, kd_idx):
+                continue
+            complex_id = _norm_complex_id(row[id_idx])
+            kd = parse_kd(row[kd_idx])
+            if not complex_id or kd is None:
+                continue
+            table[complex_id] = {
+                "kd": kd,
+                "pkd": -math.log10(kd),
+                "dg": R_KCAL * T_REF * math.log(kd),
+            }
+    return table
+
+
+def _affinity_by_pdb_code(table: dict[str, dict]) -> dict[str, dict]:
+    grouped = defaultdict(list)
+    for complex_id, record in table.items():
+        grouped[complex_id.split("_", 1)[0].upper()].append(record)
+    return {code: records[0] for code, records in grouped.items() if len(records) == 1}
+
+
+def lookup_affinity(complex_id: str, table: dict[str, dict], by_code: dict[str, dict]):
+    complex_id = _norm_complex_id(complex_id)
+    if complex_id in table:
+        return table[complex_id]
+    return by_code.get(complex_id.split("_", 1)[0].upper())
 
 
 def _flat_chains(record, field: str) -> ak.Array:
@@ -151,15 +222,16 @@ class WengPdbProcessor(PdbProcessor):
 
 
 class WengDockingAdapter(Adapter):
-    """Download protein-ligand complexes from the Weng et al. docking benchmark."""
+    """Download protein–protein complexes from the Weng et al. docking benchmark."""
 
     @classmethod
-    def download(cls, version: str = "5.5"):
+    def download(cls, version: str = "5.5", require_affinity: bool = False):
         path = config.raw_path / "WengDocking" / version
         archive = path / f"benchmark{version}.tgz"
         benchmark_dir = path / f"benchmark{version}"
         table_path = path / f"Table_BM{version}.xlsx"
         struct_dir = benchmark_dir / "structures"
+        affinity_path = config.raw_path / "WengDocking" / "affinity_bm2" / "PPAB_V2.csv"
 
         if not struct_dir.exists():
             download(f"{BASE_URL}/benchmark{version}.tgz", path / f"benchmark{version}")
@@ -168,6 +240,14 @@ class WengDockingAdapter(Adapter):
 
         if not table_path.exists():
             download(f"{BASE_URL}/Table_BM{version}.xlsx", table_path.with_suffix(""))
+
+        affinity_table = {}
+        affinity_by_code = {}
+        if require_affinity:
+            if not affinity_path.exists():
+                download(AFFINITY_URL, affinity_path)
+            affinity_table = parse_affinity_table(affinity_path)
+            affinity_by_code = _affinity_by_pdb_code(affinity_table)
 
         cases = parse_benchmark_table(table_path)
         records = []
@@ -179,10 +259,15 @@ class WengDockingAdapter(Adapter):
             }
             if not all(path.exists() for path in paths.values()):
                 continue
+            affinity = lookup_affinity(case["complex"], affinity_table, affinity_by_code)
+            if require_affinity and affinity is None:
+                continue
+            if affinity is not None:
+                case.update(affinity)
             receptor_bound, ligand_bound = [
                 WengPdbProcessor.process_file(paths[part]) for part in ("r_b", "l_b")
             ]
-            metadata = {key: case[key] for key in METADATA_FIELDS}
+            metadata = {key: case[key] for key in METADATA_FIELDS if key in case}
             records.append(
                 merge_structures(
                     [receptor_bound, ligand_bound], case["complex"], metadata

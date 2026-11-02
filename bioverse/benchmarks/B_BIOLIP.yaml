@@ -1,0 +1,17 @@
+description: Protein–ligand binding affinity (pKd) regression on BioLiP complexes
+  (full redundant set). The input is the bound protein–ligand pair stored as two
+  chains of one molecule; the target is −log10(Kd).
+citation: 'Zhang et al. "BioLiP2: an updated structure database for biologically relevant
+  ligand–protein interactions." Nucleic Acids Research 52, D404–D412 (2024).
+  https://doi.org/10.1093/nar/gkad630 Yang, Roy, and Zhang. "BioLiP: a semi-manually
+  curated database for biologically relevant ligand-protein interactions." Nucleic
+  Acids Research 41, D1096–D1103 (2013). https://doi.org/10.1093/nar/gks1173'
+dataset: D_BIOLIP
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: pkd
+    resolution: atom
+metric:
+- MeanAbsoluteErrorMetric
+- SpearmansRhoMetric

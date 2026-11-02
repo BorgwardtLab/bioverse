@@ -186,6 +186,38 @@ ATOM_ALPHABET = [
     "Ts",
     "Og",
 ]
+_ELEMENT_BY_UPPER = {el.upper(): el for el in ATOM_ALPHABET}
+
+
+def normalize_element(symbol: str) -> str:
+    """Canonical element symbol (``FE`` / ``fe`` → ``Fe``)."""
+    text = str(symbol).strip()
+    if not text:
+        return "X"
+    return _ELEMENT_BY_UPPER.get(text.upper(), text[0].upper() + text[1:].lower())
+
+
+def element_from_atom_name(name: str) -> str:
+    """Element symbol from a PDB atom name or element label.
+
+    Two-letter symbols are accepted only when the second character is
+    lowercase (``Fe``), so ``CA`` is carbon rather than calcium.
+    """
+    text = str(name).strip()
+    i = 0
+    while i < len(text) and text[i].isdigit():
+        i += 1
+    text = text[i:]
+    if not text:
+        return "X"
+    if len(text) >= 2 and text[0].isalpha() and text[1].islower():
+        pair = text[0].upper() + text[1].lower()
+        if pair.upper() in _ELEMENT_BY_UPPER:
+            return _ELEMENT_BY_UPPER[pair.upper()]
+    first = text[0].upper()
+    return _ELEMENT_BY_UPPER.get(first, first)
+
+
 BIOCHEMICAL_ATOM_ALPHABET = [
     # Major elements (bulk of biomolecules)
     "H",  # Hydrogen

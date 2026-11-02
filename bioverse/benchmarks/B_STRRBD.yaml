@@ -1,0 +1,10 @@
+description: Mutational effect prediction on the Starr et al. SARS-CoV-2 Wuhan-Hu-1
+  RBD ACE2-binding scan, scored by Spearman correlation with Δlog10Ka.
+citation: Starr, Greaney et al. "Shifting mutational constraints in the SARS-CoV-2
+  receptor-binding domain during viral evolution." Science 377, 420–424 (2022).
+  https://doi.org/10.1126/science.abo7896
+dataset: D_STRRBD
+sampler: MutationSampler
+task: MutationEffectPredictionTask
+metric: SpearmansRhoMetric
+split: starr_mutation_split

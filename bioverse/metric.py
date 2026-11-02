@@ -43,14 +43,14 @@ class Metric(ABC):
         property: str | None = None,
         name: str = "Metric",
         reduction: str | None = "mean",
-        on: int = 1,
+        on_axis: int = 1,
         per: int | None = None,
     ):
         self.name = name if property is None else f"{name} ({property})"
         self.property = property
         self.reduce = getattr(np, reduction) if reduction is not None else lambda x: x
         self.per = per
-        self.on = on
+        self.on_axis = on_axis
         self.values = []
         self.y_true = []
         self.y_pred = []
@@ -72,8 +72,8 @@ class Metric(ABC):
         y_true, y_pred = self.before_compute(y_true, y_pred)
         property = self.property or y_true.fields[0]
         y_true, y_pred = y_true[property], y_pred[property]  # type: ignore
-        y_true = flatten(y_true, axes=slice(None, self.on), exclude=self.per)
-        y_pred = flatten(y_pred, axes=slice(None, self.on), exclude=self.per)
+        y_true = flatten(y_true, axes=slice(None, self.on_axis), exclude=self.per)
+        y_pred = flatten(y_pred, axes=slice(None, self.on_axis), exclude=self.per)
         if self.per is None:
             self.y_true.append(y_true)
             self.y_pred.append(y_pred)
@@ -84,7 +84,7 @@ class Metric(ABC):
         if self.per is None:
             y_true = ak.concatenate(self.y_true)
             y_pred = ak.concatenate(self.y_pred)
-            if self.on == 0:
+            if self.on_axis == 0:
                 y_true = y_true[None]
                 y_pred = y_pred[None]
             values = [self.compute(y_true, y_pred)]
@@ -92,12 +92,17 @@ class Metric(ABC):
             values = ak.Array(self.values)
             if values.ndim > 1:
                 values = ak.concatenate(values)
+        materialized = np.asarray(ak.to_list(values), dtype=float)
+        if materialized.size == 0 or not np.any(np.isfinite(materialized)):
+            reduced = np.array(np.nan)
+        else:
+            reduced = np.asarray(self.reduce(materialized), dtype=float)
         result = Result(
             [
                 {
                     "Model": model_name,
                     "Metric": self.name,
-                    "Value": self.reduce(values).item(),
+                    "Value": float(reduced.reshape(-1)[0]),
                 }
             ],
             {self.name: self.better},
@@ -170,14 +175,12 @@ class Result:
     :meth:`to_dict`.
     """
 
-    def __init__(self, data=[], better={}) -> None:
-        self.data = data
-        self.better = better
+    def __init__(self, data=None, better=None) -> None:
+        self.data = list(data or [])
+        self.better = dict(better or {})
 
     def __add__(self, other: Result) -> Result:
-        self.data += other.data
-        self.better.update(other.better)
-        return self
+        return Result(self.data + other.data, {**self.better, **other.better})
 
     def format(
         self,

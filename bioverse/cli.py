@@ -28,7 +28,9 @@ def main():
     assert "trainer" in config, "trainer must be specified in config"
     assert "model" in config, "model must be specified in config"
     assert "benchmark" in config, "benchmark must be specified in config"
-    assert "transforms" in config, "transforms must be specified in config"
+    assert config.get("transforms") or config.get("live_transforms"), (
+        "transforms or live_transforms must be specified in config"
+    )
 
     # set global config options
     for key, value in config.get("globals", {}).items():
@@ -47,11 +49,10 @@ def main():
 
     # instantiate benchmark
     benchmark = BenchmarkFactory(config["benchmark"])
-    transforms = TransformFactory(config["transforms"])
-    benchmark.apply(transforms)
-    if "live_transforms" in config:
-        live_transforms = TransformFactory(config["live_transforms"])
-        benchmark.live(live_transforms)
+    if config.get("transforms"):
+        benchmark.apply(TransformFactory(config["transforms"]))
+    if config.get("live_transforms"):
+        benchmark.live(TransformFactory(config["live_transforms"]))
 
     # instantiate trainer
     trainer = Trainer(model, benchmark, **config["trainer"])

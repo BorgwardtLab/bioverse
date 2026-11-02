@@ -2,16 +2,26 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch
 
+import awkward as ak
 import pytest
 
-from bioverse.adapters.alpha_fold_inv_bench import AlphaFoldInvBenchAdapter
+from bioverse.adapters.alpha_fold_inv_bench import (
+    AlphaFoldInvBenchAdapter,
+    crop_record_to_ranges,
+)
 from bioverse.utilities.id_mapping import (
     alphafold_candidates,
     build_alphafold_index,
+    cath_domains_for_chain,
     fetch_alphafold_structure,
     fetch_alphafold_structures,
+    load_cath_domain_boundaries,
+    load_sifts_segments,
+    map_seqres_range,
+    parse_cath_boundary_line,
     parse_invbench_name,
     resolve_alphafold_structure,
+    resolve_invbench_domain_mapping,
 )
 
 
@@ -122,6 +132,12 @@ def afcath_fixture(tmp_path, monkeypatch):
         af_path / "AF-P00963-F1-model_v4.pdb",
     )
 
+    cath_path = raw_path / "CATH" / "v4_2_0"
+    cath_path.mkdir(parents=True)
+    (cath_path / "cath-domain-boundaries-seqreschopping-v4_2_0.txt").write_text(
+        "12asA00\t1-9\n"
+    )
+
     monkeypatch.setattr(config, "raw_path", raw_path)
     return raw_path
 
@@ -138,6 +154,7 @@ def test_adapter_maps_invbench_to_alphafold(afcath_fixture):
     assert batch.data["molecule_id"][0][0][0] == "12as.A"
     assert batch.data["molecule_uniprot"][0][0][0] == "P00963"
     assert batch.data["molecule_structure_source"][0][0][0] == "alphafold"
+    assert len(batch.data["residue_label"][0][0][0][0]) == 9
     assert (
         split.names["ProteinInvBench_scene_split"][
             split.data["ProteinInvBench_scene_split"][0]
@@ -171,3 +188,62 @@ def test_adapter_api_fallback(afcath_fixture):
     assert assets["mapping_summary"]["mapped"] == 1
     assert assets["mapping_summary"]["mapped_api"] == 1
     assert batch.data["molecule_id"][0][0][0] == "12as.A"
+    assert len(batch.data["residue_label"][0][0][0][0]) == 9
+
+
+def test_parse_cath_boundary_line():
+    assert parse_cath_boundary_line("12asA00\t4-330") == ("12asA00", [(4, 330)])
+    assert parse_cath_boundary_line("10gsA01\t2-78,187-208") == (
+        "10gsA01",
+        [(2, 78), (187, 208)],
+    )
+    assert parse_cath_boundary_line("# comment") is None
+
+
+def test_resolve_invbench_domain_mapping_picks_matching_domain():
+    from bioverse.utilities.id_mapping import SiftsSegment
+
+    sifts = {
+        ("12AS", "A"): [SiftsSegment("P00963", 1, 330, 1, 330)],
+    }
+    boundaries = {
+        "12asA01": [(1, 100)],
+        "12asA02": [(101, 300)],
+        "12asB00": [(1, 50)],
+    }
+    assert cath_domains_for_chain("12AS", "A", boundaries) == ["12asA01", "12asA02"]
+    mapped = resolve_invbench_domain_mapping(
+        "12as.A", sifts, boundaries, seq="X" * 100
+    )
+    assert mapped == [("P00963", [(1, 100)])]
+    mapped = resolve_invbench_domain_mapping(
+        "12as.A", sifts, boundaries, seq="X" * 200
+    )
+    assert mapped == [("P00963", [(101, 300)])]
+
+
+def test_map_seqres_range_projects_to_uniprot():
+    from bioverse.utilities.id_mapping import SiftsSegment
+
+    segments = [SiftsSegment("P00963", 1, 330, 10, 339)]
+    assert map_seqres_range(4, 9, segments) == [("P00963", 13, 18)]
+
+
+def test_load_sifts_segments_and_cath_boundaries(afcath_fixture):
+    segments = load_sifts_segments()
+    assert segments[("12AS", "A")][0].uniprot == "P00963"
+    assert segments[("12AS", "A")][0].sp_beg == 1
+    assert segments[("12AS", "A")][0].sp_end == 9
+    boundaries = load_cath_domain_boundaries()
+    assert boundaries["12asA00"] == [(1, 9)]
+
+
+def test_crop_record_to_ranges(afcath_fixture):
+    from bioverse.processors import PdbProcessor
+
+    pdb_path = afcath_fixture / "AlphaFoldDB/v4/swissprot_pdb/AF-P00963-F1-model_v4.pdb"
+    record = PdbProcessor.process_file(pdb_path)
+    cropped = crop_record_to_ranges(record, [(1, 9)])
+    assert cropped is not None
+    assert len(ak.to_list(cropped["residue_number"][0, 0, 0])) == 9
+    assert crop_record_to_ranges(record, [(1000, 1001)]) is None

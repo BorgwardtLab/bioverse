@@ -1,0 +1,12 @@
+description: ProteinShake EC train/validation structures merged with M-CSA curated
+  catalytic-site test structures.
+citation:
+- 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven Protein
+  Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
+- 'Ribeiro et al. "Mechanism and Catalytic Site Atlas." Nucleic Acids Research (2018).
+  M-CSA data distributed under CC BY 4.0.'
+adapter:
+  EcacsaAdapter:
+    val_size: 1000
+transforms:
+- DeduplicateAtoms

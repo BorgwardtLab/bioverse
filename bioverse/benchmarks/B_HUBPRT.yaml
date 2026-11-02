@@ -1,0 +1,10 @@
+description: Protease substrate-specificity engineering on the Huber et al. TEV single-mutant
+  combinatorial screen, scored by Spearman correlation with proteolytic AUC.
+citation: Huber, Kucera et al. "Data-driven protease engineering by DNA-recording and
+  epistasis-aware machine learning." Nature Communications 16, 5808 (2025).
+  https://doi.org/10.1038/s41467-025-60622-7
+dataset: D_HUBPRT
+sampler: MutationSampler
+task: MutationEffectPredictionTask
+metric: SpearmansRhoMetric
+split: huber_mutation_split

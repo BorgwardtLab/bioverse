@@ -69,9 +69,14 @@ def onehot(data: ak.Array, num_classes: int) -> ak.Array:
 
 
 def cumsum(array: ak.Array) -> ak.Array:
+    array = ak.Array(array)
+    squeeze = array.ndim < 2
+    if squeeze:
+        array = ak.Array([np.asarray(ak.ravel(array))])
     sizes = ak.num(array, axis=-1)
     scan = ak.unflatten(np.cumsum(ak.ravel(array)), sizes, axis=0)
-    return ak.fill_none(scan - ak.firsts(scan) + ak.firsts(array), [])
+    out = ak.fill_none(scan - ak.firsts(scan) + ak.firsts(array), [])
+    return out[0] if squeeze else out
 
 
 def diff(array: ak.Array) -> ak.Array:

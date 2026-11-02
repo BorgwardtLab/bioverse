@@ -1,0 +1,20 @@
+description: ProteinGym substitution DMS restricted to Activity, Binding, and
+  Stability assays. Organismal-fitness and expression screens are dropped.
+  Assays whose id or UniProt matches Huber TEV / NIa proteases are excluded
+  to prevent leakage into zero-shot Huber evaluation. Effects are WT-centered
+  (assay WT row if present, otherwise median).
+citation: 'Notin et al. "ProteinGym: Large-Scale Benchmarks for Protein Fitness Prediction
+  and Design." NeurIPS Datasets and Benchmarks Track (2023).'
+adapter:
+  ProteinGymAdapter:
+    dms_types:
+      - Activity
+      - Binding
+      - Stability
+    exclude_substrings:
+      - TEV
+      - TEVP
+      - NIa
+      - P04517
+      - TOBACCO_ETCH
+    center: wt

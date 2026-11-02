@@ -1,0 +1,6 @@
+description: TEV protease–substrate single-site combinatorial screen with a Boltz-2
+  predicted complex structure.
+citation: Huber, Kucera et al. "Data-driven protease engineering by DNA-recording and
+  epistasis-aware machine learning." Nature Communications 16, 5808 (2025).
+  https://doi.org/10.1038/s41467-025-60622-7
+adapter: HuberProteaseAdapter

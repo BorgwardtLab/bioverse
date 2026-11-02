@@ -1,0 +1,17 @@
+description: Masked pocket prediction on BioLiP protein–peptide complexes (full
+  redundant set). Same pocket mask as B_BLPPEP, but peptide residue identity is
+  replaced with the masking token (unconditional pocket IF).
+citation: 'Zhang et al. "BioLiP2: an updated structure database for biologically relevant
+  ligand–protein interactions." Nucleic Acids Research 52, D404–D412 (2024).
+  https://doi.org/10.1093/nar/gkad630 Yang, Roy, and Zhang. "BioLiP: a semi-manually
+  curated database for biologically relevant ligand-protein interactions." Nucleic
+  Acids Research 41, D1096–D1103 (2013). https://doi.org/10.1093/nar/gks1173'
+dataset: D_BLPPEP
+sampler: MoleculeSampler
+task:
+  MaskedPocketPredictionTask:
+    radius: 8.0
+    hide_peptide: true
+metric:
+- RecoveryMetric: null
+- BlosumScoreMetric: null

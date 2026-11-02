@@ -12,7 +12,7 @@ from typing import Iterator, Tuple
 import awkward as ak
 
 from .data import Assets, Batch, Split
-from .transform import Compose, Transform
+from .transform import Compose, Transform, flatten_transforms
 from .transforms import Identity
 from .utilities import (
     SHARD_SIZE,
@@ -26,6 +26,7 @@ from .utilities import (
     save_shards,
     zip_file,
 )
+from .utilities.lock import exclusive_file_lock
 from .utilities.precomputed import Precomputed, fetch_precomputed
 from .virtual import VirtualBatch
 
@@ -80,12 +81,20 @@ class Dataset(ABC):
         version = version or self.bump_version
         self.version = version
         if not self._is_materialized(version):
-            if online and self.download(version) is not None:
-                info(f"Downloaded precomputed version {version}.")
-            else:
-                info("Could not find dataset. Running a release.")
-                self.run_release(version)
-                info(f"Released version {version}.")
+            with exclusive_file_lock(
+                self.croot / f".v{version}.lock",
+                wait_message=(
+                    f"Waiting for another process to finish writing "
+                    f"{self.name} v{version}."
+                ),
+            ):
+                if not self._is_materialized(version):
+                    if online and self.download(version) is not None:
+                        info(f"Downloaded precomputed version {version}.")
+                    else:
+                        info("Could not find dataset. Running a release.")
+                        self.run_release(version)
+                        info(f"Released version {version}.")
         self.path = self.croot / f"v{version}" / self.transform.hash()
         self.clear_property_caches()
         if not os.path.exists(self.path / "transform.pkl"):
@@ -122,6 +131,14 @@ class Dataset(ABC):
         self, version: int, transform_hash: str | None = None
     ) -> bool:
         return (self._materialized_path(version, transform_hash) / "num_shards.json").is_file()
+
+    def _staging_path(self, dest: Path) -> Path:
+        return dest.parent / f".{dest.name}.building"
+
+    def _commit_directory(self, staging: Path, dest: Path) -> None:
+        if dest.exists():
+            shutil.rmtree(dest)
+        os.rename(staging, dest)
 
     def download(self, version: int) -> int | None:
         if self._fetch_precomputed(version):
@@ -199,35 +216,49 @@ class Dataset(ABC):
         return VirtualBatch(self.path, self.assets, self.live_transform)
 
     def apply(self, *transforms: Transform) -> None:
+        transforms = flatten_transforms(*transforms)
         self.transform = Compose(*transforms)
-        new_path = self.croot / f"v{self.version}" / self.transform.hash()
+        transform_hash = self.transform.hash()
+        new_path = self._materialized_path(self.version, transform_hash)
         transform_path = new_path / "transform.pkl"
-        if not self._is_materialized(self.version, self.transform.hash()):
-            if self.online and self._fetch_precomputed(
-                self.version, self.transform.hash()
+        wrote = False
+        if not self._is_materialized(self.version, transform_hash):
+            with exclusive_file_lock(
+                new_path.parent / f".{transform_hash}.lock",
+                wait_message=(
+                    f"Waiting for another process to finish writing {new_path}."
+                ),
             ):
-                note("Downloaded precomputed transform.")
+                if not self._is_materialized(self.version, transform_hash):
+                    if self.online and self._fetch_precomputed(
+                        self.version, transform_hash
+                    ):
+                        note("Downloaded precomputed transform.")
+                    else:
+                        staging = self._staging_path(new_path)
+                        if staging.exists():
+                            shutil.rmtree(staging)
+                        shards, split, assets = self.transform(
+                            self.shards, self.split, self.assets
+                        )
+                        save_shards(shards, staging)
+                        split.save(staging)
+                        save(assets, staging / "assets.json")
+                        save(self.transform, staging / "transform.pkl")
+                        self._commit_directory(staging, new_path)
+                    wrote = True
+        if not wrote:
+            if transform_path.is_file():
+                note("Data were already transformed. Loading from disk.")
+                note(str(new_path))
+                self.transform = load(transform_path)  # for fitted values
             else:
-                if new_path.exists():
-                    shutil.rmtree(new_path)
-                shards, split, assets = self.transform(
-                    self.shards, self.split, self.assets
-                )
-                save_shards(shards, new_path)
-                split.save(new_path)
-                save(assets, new_path / "assets.json")
                 save(self.transform, transform_path)
-        elif transform_path.is_file():
-            note("Data were already transformed. Loading from disk.")
-            note(str(new_path))
-            self.transform = load(transform_path)  # for fitted values
-        else:
-            save(self.transform, transform_path)
         self.path = new_path
         self.clear_property_caches()
 
     def live(self, *transforms: Transform) -> None:
-        self.live_transform = Compose(*transforms)
+        self.live_transform = Compose(*flatten_transforms(*transforms))
 
     @abstractmethod
     def release(self) -> Tuple[Iterator[Batch], Split, Assets]:

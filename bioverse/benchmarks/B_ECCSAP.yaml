@@ -1,0 +1,16 @@
+description: Enzyme commission (EC) class prediction on D_ECACSA with M-CSA test structures.
+citation:
+- 'Günther et al. "ProteinShake: Building Blocks and Benchmarks for Data-Driven Protein
+  Modeling." NeurIPS Datasets and Benchmarks Track (2023).'
+- 'Ribeiro et al. "Mechanism and Catalytic Site Atlas." Nucleic Acids Research (2018).'
+dataset: D_ECACSA
+sampler: MoleculeSampler
+task:
+  PropertyPredictionTask:
+    property: ec1
+    level: molecule
+    resolution: residue
+metric:
+- MultiClassAccuracyMetric
+- MacroPrecisionMetric
+- MacroRecallMetric

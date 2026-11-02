@@ -1,5 +1,6 @@
 import json
 import os
+import pickle
 import tempfile
 from pathlib import Path
 from unittest.mock import mock_open, patch
@@ -10,6 +11,10 @@ import pytest
 import yaml
 
 from bioverse.utilities import *
+
+
+def _double(x):
+    return x * 2
 
 
 # Array utilities tests
@@ -237,19 +242,40 @@ class TestIOUtilities:
             assert mock_tar_file.extract.call_count == 2
             mock_os.remove.assert_called_once_with(Path("archive.tar"))
 
-    @patch("bioverse.utilities.io.Parallel")
-    def test_parallelize(self, mock_parallel):
-        mock_parallel_instance = mock_parallel.return_value
-        mock_parallel_instance.return_value = iter([2, 4, 6])
+    def test_parallelize_single_and_multi_worker(self):
+        with patch("bioverse.utilities.io.config.workers", 1):
+            assert list(parallelize(_double, [1, 2, 3], progress=False)) == [2, 4, 6]
+        with patch("bioverse.utilities.io.config.workers", 2):
+            assert list(parallelize(_double, [1, 2, 3], progress=False)) == [2, 4, 6]
 
-        with patch("bioverse.utilities.io.config.workers", 4):
-            with patch("bioverse.utilities.io.Progress"):
-                with patch("bioverse.utilities.io.itlen", return_value=(3, [1, 2, 3])):
-                    result = list(
-                        parallelize(lambda x: x * 2, [1, 2, 3], progress=True)
-                    )
-                    assert result == [2, 4, 6]
-                    mock_parallel.assert_called_with(n_jobs=4, return_as="generator")
+    def test_parallelize_early_close_does_not_raise(self):
+        with patch("bioverse.utilities.io.config.workers", 2):
+            results = parallelize(_double, [1, 2, 3, 4, 5], progress=False)
+            assert next(results) == 2
+            results.close()
+
+    def test_loader_payload_roundtrip_numpy(self):
+        from bioverse.collaters.long import Data
+        from bioverse.utilities.mp_pool import pack_loader_result, unpack_loader_result
+
+        data = Data(y=np.arange(8), residue_features=np.ones((8, 4)))
+        packed = pack_loader_result(((None, data.y), data))
+        xy, restored = unpack_loader_result(packed)
+        assert restored.residue_features.shape == (8, 4)
+        np.testing.assert_array_equal(restored.y, np.arange(8))
+
+    def test_loader_payload_keeps_string_fields(self):
+        from bioverse.collaters.long import Data
+        from bioverse.utilities.mp_pool import pack_loader_result, unpack_loader_result
+
+        data = Data(
+            y=np.arange(4),
+            residue_features=np.ones((4, 2)),
+            residue_label=ak.Array(["A", "C", "D", "E"]),
+        )
+        _, restored = unpack_loader_result(pack_loader_result(((None, data.y), data)))
+        assert ak.to_list(restored.residue_label) == ["A", "C", "D", "E"]
+        assert restored.residue_features.dtype.kind == "f"
 
     @pytest.mark.skip("Requires proper Batch class mock")
     def test_batched_rebatch_save_shards(self):
@@ -272,6 +298,19 @@ class TestIOUtilities:
         assert hasattr(mock_module, "AliasName")
         assert getattr(mock_module, "AliasName") == TestClass
         assert decorated == TestClass  # Decorator should return the original class
+
+
+def test_split_load_legacy_ak(tmp_path):
+    from bioverse.data import Split
+
+    raw = ak.Array([[0], [0], [1], [2]])
+    with open(tmp_path / "split.ak", "wb") as handle:
+        pickle.dump(raw, handle)
+    (tmp_path / "split.names.json").write_text(json.dumps(["train", "val", "test"]))
+    split = Split.load(tmp_path)
+    assert split.default == "scene_split"
+    assert split.names["scene_split"] == ["train", "val", "test"]
+    assert list(split.data["scene_split"]) == [0, 0, 1, 2]
 
 
 # Data utilities tests

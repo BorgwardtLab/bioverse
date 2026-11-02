@@ -1,5 +1,5 @@
-description: CATH domain structures from AlphaFold Swiss-Prot for inverse folding
-  evaluation, with API fallback for missing entries.
+description: CATH 4.2 domains cropped from AlphaFold Swiss-Prot structures so the
+  split matches D_INVC42, with API fallback for missing entries.
 citation:
 - Orengo et al. "CATH — A Hierarchic Classification of Protein Domain Structures."
   Structure 5, 1093–1109 (1997).
